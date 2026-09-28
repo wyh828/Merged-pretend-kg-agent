@@ -1,0 +1,25 @@
+# 敏感文件
+.env
+
+# 运行时产物（保留目录占位 .gitkeep，忽略其中内容）
+data/*
+!data/.gitkeep
+output/*
+!output/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# 信号子包运行时缓存（PoliteApiClient）
+*.sqlite
+request_log_*.jsonl
+
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store

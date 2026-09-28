@@ -1,0 +1,50 @@
+# Unified HTTP settings shared by all collectors via PoliteApiClient.
+http:
+  user_agent: "PredictiveAgents/0.1 (research project)"
+  contact_email_env: PROJECT_CONTACT_EMAIL
+  timeout_seconds: 30
+  max_retries: 3
+  min_interval_seconds: 3.0
+  backoff_factor_seconds: 15.0
+  max_backoff_seconds: 90.0
+  max_retry_after_seconds: 120.0
+  jitter_seconds: 1.5
+  respect_retry_after: true
+
+# Per-source switches and parameters
+sources:
+  openalex:
+    enabled: false         # OpenAlex collector replaced by CrossRef
+    email: research@example.com   # Override via OPENALEX_EMAIL env var for polite pool
+    dimension: academic
+    # api_key: read from OPENALEX_API_KEY env var (free at openalex.org/settings/api)
+  crossref:
+    enabled: true
+    mailto: research@example.com   # Override via CROSSREF_MAILTO env var for polite pool
+    dimension: academic
+  arxiv:
+    enabled: false        # Disabled: export.arxiv.org returns 429 rate limits without API key
+    dimension: academic
+    # arXiv API is free, no key needed. 3-second min_interval enforced in collector.
+  uspto:
+    enabled: false        # Disabled by default: requires USPTO API key (see .env.example)
+    api_mode: patentsearch  # "odp" (requires USPTO.gov account + ID.me) or "patentsearch"
+    dimension: academic
+    # api_key: read from USPTO_API_KEY env var (free at data.uspto.gov/apis/getting-started)
+  gdelt:
+    enabled: false        # Cached in interim
+    dimension: corporate
+  github:
+    enabled: false        # Cached in interim
+    dimension: community
+    k_new: 100           # Top-K for newly created repos in the last 7 days per query
+    k_active: 50         # Top-K for recently active repos (pushed in last 1 day) per query
+    per_page: 30         # Page size (GitHub max 100; smaller reduces rate pressure)
+    max_pages: 4         # Safety cap per query kind
+    delta_7d_threshold: 100  # Stars increase in 7 days to mark as surging (if prior snapshot exists)
+    use_llm_summarize: false # Gate LLM summarization for very long descriptions
+    llm_daily_cap: 30
+    description_max_chars: 280
+    # Optional filters
+    language_whitelist: []   # e.g., ["Python", "JavaScript"]
+    org_whitelist: []        # e.g., ["pytorch", "tensorflow"]

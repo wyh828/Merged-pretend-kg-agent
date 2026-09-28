@@ -1,0 +1,35 @@
+# ===== P0 核心（当前安装）=====
+pydantic-settings>=2.5
+
+# ===== P1 数据层（采集）=====
+httpx>=0.27                 # REST 采集（OpenAlex/arXiv/GitHub/GDELT）
+tenacity>=8.2               # 重试/限速
+python-dateutil>=2.8        # 时间处理
+
+# ===== P1 图谱层 =====
+neo4j>=5.20                 # Neo4j 官方驱动
+
+# ===== P2 抽取（LLM）=====
+openai>=1.40                # 抽取用 LLM（DeepSeek 走 OpenAI 兼容接口）
+
+# ===== P2 多源采集 / 对齐 =====
+feedparser>=6.0             # arXiv OAI-PMH Atom + RSSHub RSS 解析
+rapidfuzz>=3.9              # 实体对齐 string 匹配（无网可退 difflib）
+
+# ===== P1/P3 预测层 =====
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.5
+torch>=2.2                  # GNN/TKG 主干（CPU 版即可起步）
+pykeen>=1.10                # 静态 KG 嵌入（RotatE/TuckER）
+
+# ===== P5 编排降级兜底 =====
+apscheduler>=3.10             # 底层独立调度（hermes-agent 不可用时的 Plan B）
+
+# ===== 阶段0 合并：信号子包 techtrend/signal（来自 pretend-agent）=====
+pyyaml>=6.0                 # 话题/源配置 yaml（signal.config）
+aiohttp>=3.9                # PoliteApiClient 异步 HTTP
+aiosqlite>=0.20             # PoliteApiClient SQLite 缓存
+python-dotenv>=1.0          # reporting_agent / cloud_storage 读取 .env
+pytest>=8.2                 # 信号子包最小单测
+# esdk-obs-python>=3.25.8   # 可选：华为云 OBS（cloud_storage.py 懒加载 obs，仅云备份需要）

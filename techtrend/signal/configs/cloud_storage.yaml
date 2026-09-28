@@ -1,0 +1,23 @@
+# Cloud backup settings for Huawei Cloud OBS (Object Storage Service).
+#
+# This is an OPTIONAL sync target for Data/Processed (and, if enabled,
+# Data/Interim). Local files under Data/ remain the source of truth;
+# nothing here changes PipelineConfig's local path resolution.
+#
+# Credentials (Access Key / Secret Key) must never go in this file.
+# Set them in .env as HUAWEICLOUD_AK / HUAWEICLOUD_SK (see .env.example).
+
+huawei_obs:
+  enabled: false            # Flip to true once the bucket exists and .env has AK/SK
+  endpoint: obs.cn-north-4.myhuaweicloud.com   # Region endpoint, e.g. cn-north-4 (Beijing)
+  bucket: predictive-agents-data
+  access_key_env: HUAWEICLOUD_AK
+  secret_key_env: HUAWEICLOUD_SK
+
+  # Which local data layers get synced, and under what remote prefix.
+  sync_targets:
+    - local: Processed
+      remote_prefix: Processed
+    - local: Interim
+      remote_prefix: Interim
+      enabled: false        # Interim data churns often; leave off by default

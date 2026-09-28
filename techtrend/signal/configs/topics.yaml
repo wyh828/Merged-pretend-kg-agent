@@ -1,0 +1,54 @@
+topics:
+  - topic_id: large_language_models
+    topic_label: Large Language Models
+    openalex_query: '"large language model" OR "large language models" OR LLM'
+    crossref_query: '"large language model" OR "large language models" OR LLM'
+    gdelt_query: '"large language model" OR "large language models" OR LLM'
+    github_query: '"large language model" OR "LLM" in:name,description,topics'
+    arxiv_query: '"large language model" OR "large language models" OR LLM'
+    uspto_query: '"large language model" OR "large language models" OR LLM'
+
+  - topic_id: ai_agents
+    topic_label: AI Agents
+    openalex_query: '"AI agent" OR "AI agents" OR "agentic AI" OR "autonomous agent"'
+    crossref_query: '"AI agent" OR "AI agents" OR "agentic AI" OR "autonomous agent"'
+    gdelt_query: '"AI agent" OR "AI agents" OR "agentic AI" OR "autonomous agent"'
+    github_query: '"AI agent" OR "autonomous agent" OR "agentic" in:name,description,topics'
+    arxiv_query: '"AI agent" OR "AI agents" OR "agentic AI" OR "autonomous agent"'
+    uspto_query: '"AI agent" OR "AI agents" OR "agentic AI" OR "autonomous agent"'
+
+  - topic_id: embodied_intelligence
+    topic_label: Embodied Intelligence
+    openalex_query: '"embodied intelligence" OR "embodied AI"'
+    crossref_query: '"embodied intelligence" OR "embodied AI"'
+    gdelt_query: '"embodied intelligence" OR "embodied AI"'
+    github_query: '"embodied intelligence" OR "embodied AI" in:name,description,topics'
+    arxiv_query: '"embodied intelligence" OR "embodied AI"'
+    uspto_query: '"embodied intelligence" OR "embodied AI"'
+
+  - topic_id: robotics
+    topic_label: Robotics
+    openalex_query: robotics OR robot
+    crossref_query: robotics OR robot
+    gdelt_query: robotics OR robot
+    github_query: 'robotics OR robot in:name,description,topics'
+    arxiv_query: robotics OR robot
+    uspto_query: robotics OR robot
+
+  - topic_id: quantum_computing
+    topic_label: Quantum Computing
+    openalex_query: '"quantum computing" OR "quantum computer"'
+    crossref_query: '"quantum computing" OR "quantum computer"'
+    gdelt_query: '"quantum computing" OR "quantum computer"'
+    github_query: '"quantum computing" OR "quantum computer" in:name,description,topics'
+    arxiv_query: '"quantum computing" OR "quantum computer"'
+    uspto_query: '"quantum computing" OR "quantum computer"'
+
+  - topic_id: metaverse
+    topic_label: Metaverse
+    openalex_query: metaverse
+    crossref_query: metaverse
+    gdelt_query: metaverse
+    github_query: 'metaverse in:name,description,topics'
+    arxiv_query: metaverse
+    uspto_query: metaverse

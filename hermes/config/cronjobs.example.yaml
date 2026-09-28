@@ -1,0 +1,19 @@
+# hermes-agent cronjob 定时定义（主选调度，Plan A）
+#
+# ⚠️ schema 以本机安装的 hermes-agent 版本为准（实现期第一步先 `hermes-agent --version`
+#   并查其 cronjob 配置样例）；本文件给「每条要说什么」，字段名不保证逐字一致。
+#
+# 语义内容（固定）：
+#   - 一条 cronjob，cron 表达式 `0 3 * * *`（本地时区，避开整点，见 PROJECT_PLAN 调度避峰）
+#   - 动作 = 执行底层 python 解释器绝对路径 + `cron.py --mode daily --notify`
+#   - 不用坏掉的 `python` 桩（见 memory [[python-interpreter-path]]）
+
+jobs:
+  - name: techtrend-daily
+    schedule: "0 3 * * *"          # 每日 03:00 本地
+    timezone: Asia/Shanghai
+    # 动作：外部进程触发统一入口（与 APScheduler 降级完全同构）
+    command: "E:\\conda_envs\\techtrend\\python.exe cron.py --mode daily --notify"
+    working_dir: "E:\\myproject\\tech-trend-kg-agents"
+    # 失败可重试一次，避免瞬时网络抖动导致整日漏跑
+    retries: 1

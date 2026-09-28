@@ -1,0 +1,47 @@
+# hermes-agent 角色 agent 委派定义（多智能体贡献点）
+#
+# ⚠️ schema 以本机安装的 hermes-agent 版本为准；本文件给「每个 agent 要说什么」。
+# 6 个子 agent 名字 = techtrend/orchestration/roles.py 的 Role.name（单一事实来源）。
+
+agents:
+  - name: collector
+    role: 采集 agent：调度/监控各源每日增量
+    skill: techtrend-daily           # 引用 hermes/skills/techtrend-daily/SKILL.md
+    tools: [collect]                 # 允许的底层阶段/工具
+    depends_on: []
+
+  - name: extractor
+    role: 抽取 agent：LLM 抽实体/关系并写入 Neo4j
+    skill: techtrend-daily
+    tools: [extract, align, build_graph]
+    needs_llm: true
+    depends_on: [collector]
+
+  - name: analyst
+    role: 分析 agent：突发/时序外推/回归（可并行）
+    skill: techtrend-daily
+    tools: [predict]
+    parallel_subtasks: [burst, tkg, forecast]   # fan-out 并行
+    depends_on: [extractor]
+
+  - name: integrator
+    role: 预测/集成 agent：融合多路信号 + 回测校验
+    skill: techtrend-daily
+    tools: [predict, evaluate]
+    depends_on: [analyst]
+
+  - name: reviewer
+    role: 审校 agent：报告前暂停人工确认（HITL）
+    skill: techtrend-daily
+    tools: []
+    human_checkpoint: true
+    depends_on: [integrator]
+
+  - name: reporter
+    role: 报告 agent：生成日/周报告 + 推送
+    skill: techtrend-daily
+    tools: [report, notify]
+    depends_on: [reviewer]
+
+# 委派链 = delegate_task + kanban 队列，DAG 边 = roles.py 的 runs_after（即 depends_on 上表）。
+# 并行：analyst 的 burst/tkg/forecast 三子任务 fan-out（底层 predict 已隔离，无共享状态冲突）。
