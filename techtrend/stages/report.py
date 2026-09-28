@@ -39,6 +39,9 @@ class ReportStage(Stage):
             if eval_m or cite_m:
                 body += _render_four_goals(eval_m, cite_m)
 
+            # 阶段 4 合并：可选 DeepSeek 研报解读（有 key 才跑；无 key 确定性回退）
+            body += _render_llm_narrative(s, output_dir, eval_m)
+
             report_path = output_dir / "report.md"
             report_path.write_text(body, encoding="utf-8")
             log.info("report 完成：%s", report_path)
@@ -57,6 +60,88 @@ def _read_json(path) -> dict:
 
 def _fmt(v):
     return "—" if v is None else f"{v:.4f}"
+
+
+def _read_fusion_top(output_dir, k: int = 5) -> list[dict]:
+    """读 fusion_ranking.csv 的前 k 个概念（entity/name/score）。"""
+    import csv
+
+    path = output_dir / "fusion_ranking.csv"
+    if not path.exists():
+        return []
+    try:
+        with open(path, "r", encoding="utf-8-sig", newline="") as f:
+            rows = list(csv.DictReader(f))
+        return [
+            {"concept": (r.get("name") or r.get("entity") or ""), "score": r.get("score")}
+            for r in rows[:k]
+        ]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("读 fusion_ranking.csv 失败：%s", exc)
+        return []
+
+
+def _render_llm_narrative(s, output_dir, eval_m: dict) -> str:
+    """阶段 4 合并：DeepSeek 研报解读（榜单解读 + 回测可靠性 + 行动建议）。
+
+    - 无 `llm_api_key` → 如实标注「未启用 LLM」，确定性回退（报告主体仍为确定性四目标总览）。
+    - 有 key → 调 DeepSeek（纯文本，不复用抽取器的 json_object），写 `report_llm.md`，
+      在 `report.md` 追加指针；失败则标注错误（不阻断确定性报告）。
+    """
+    note = "\n## 研报解读（LLM）\n\n"
+    if not s.llm_api_key:
+        return note + "> 未启用 LLM 研报解读：未配置 `LLM_API_KEY`（保持确定性报告）。\n"
+
+    top5 = _read_fusion_top(output_dir, k=5)
+    if not top5 and not eval_m:
+        return note + "> 无榜单/回测数据，跳过 LLM 研报解读。\n"
+
+    backtest = {
+        "p_at_k": eval_m.get("p_at_k_mean"),
+        "ndcg_at_3": eval_m.get("ndcg_at_3_mean"),
+        "ndcg_at_5": eval_m.get("ndcg_at_5_mean"),
+        "spearman_rho": eval_m.get("spearman_rho_mean"),
+        "top1_lift": eval_m.get("top1_lift_mean"),
+        "kleinberg_p_at_k": eval_m.get("kleinberg_p_at_k_mean"),
+        "leak_ok": eval_m.get("leak_ok"),
+    }
+    prompt = (
+        "我们构建了一套面向跨领域技术趋势预测的图+信号融合系统，结合学术论文、开源社区、新闻报道等多源信号，"
+        "采用「相对注意力份额 + EMA/MACD 动量」综合评分（Concept 细粒度），并做了无未来数据泄露的滚动时间窗口回测。\n\n"
+        "【最新融合技术榜单（Top 5）】：\n"
+        f"{json.dumps(top5, ensure_ascii=False, indent=2)}\n\n"
+        "【滚动回测结果（排序指标：p@k、NDCG@3/5、Spearman 秩相关、Top-1 Lift；Kleinberg 突发为消融基线）】：\n"
+        f"{json.dumps(backtest, ensure_ascii=False, indent=2)}\n\n"
+        "请基于上述数据撰写一份结构严谨、具学术与商业价值的趋势研判报告，包含：\n"
+        "1. **核心前沿技术榜单深度解读**（领跑技术 vs 相对注意力份额加速扩张的黑马）。\n"
+        "2. **回测有效性与排序可靠性评估**（结合 Spearman 单调性与 NDCG@3/5 头部命中增益，评价系统稳定度；"
+        "对比相对份额动量与 Kleinberg 突发的 p@k 差异）。\n"
+        "3. **研判结论与后续行动建议**（科研交叉方向 / 产业配置节奏 / 预测系统工程改进）。\n\n"
+        "请用清晰专业的中文、Markdown 表格与排版，保持客观严谨。"
+    )
+
+    try:
+        from openai import OpenAI  # 延迟导入，无 openai 或网络故障时确定性回退
+
+        client = OpenAI(base_url=s.llm_base_url, api_key=s.llm_api_key)
+        resp = client.chat.completions.create(
+            model=s.llm_model,
+            messages=[
+                {"role": "system", "content": "你是一名资深技术趋势分析师，用 Markdown 撰写客观严谨的研报。"},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=s.llm_max_tokens,
+            temperature=0.5,
+        )
+        md = (resp.choices[0].message.content or "").strip()
+        if not md:
+            return note + "> LLM 返回空内容，研报解读未生成。\n"
+        (output_dir / "report_llm.md").write_text(md, encoding="utf-8")
+        log.info("LLM 研报解读已写：%s", output_dir / "report_llm.md")
+        return note + "> 完整 LLM 研报解读见 `report_llm.md`（DeepSeek）。\n"
+    except Exception as exc:  # noqa: BLE001 —— 网络/key 故障不阻断确定性报告
+        log.warning("LLM 研报解读失败：%s", exc)
+        return note + f"> LLM 研报解读未生成（调用失败：{exc}）。\n"
 
 
 def _render(baseline: dict, temporal: dict) -> str:
