@@ -3,6 +3,7 @@ from techtrend.config import Settings
 from techtrend.stages.align import AlignStage
 from techtrend.stages.base import Stage
 from techtrend.stages.build_graph import BuildGraphStage
+from techtrend.stages.collaborate import CollaborateStage
 from techtrend.stages.collect import CollectStage
 from techtrend.stages.evaluate import EvaluateStage
 from techtrend.stages.extract import ExtractStage
@@ -22,6 +23,7 @@ def get_default_stages(settings: Settings) -> list[Stage]:
         PredictStage(settings),
         ReportStage(settings),
         EvaluateStage(settings),
+        CollaborateStage(settings),
         NotifyStage(settings),
         VisualizeStage(settings),
     ]
