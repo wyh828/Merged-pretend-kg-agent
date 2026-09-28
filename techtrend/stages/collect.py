@@ -13,6 +13,7 @@ from pathlib import Path
 from techtrend.config import Settings
 from techtrend.io import append_jsonl, read_jsonl, write_jsonl
 from techtrend.sources.arxiv import ArxivClient
+from techtrend.sources.crossref import CrossrefClient
 from techtrend.sources.gdelt import GdeltClient
 from techtrend.sources.github import GithubClient
 from techtrend.sources.openalex import OpenAlexClient
@@ -132,6 +133,27 @@ def _collect_openalex(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
     _write_raw(raw_dir, "openalex", _today(), tag, works)
     new = _append_dedup(interim_dir / "works.jsonl", works)
     _write_cursor(s, "openalex", _today())
+    return new
+
+
+def _collect_crossref(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
+    """CrossRef（第 7 源）：DOI 锚点 + mailto polite pool。写入 works.jsonl（与 OpenAlex
+    同文件，同属「学术 works」，下游 align 按 DOI 强锚点合并去重）。"""
+    from_date = _read_cursor(s, "crossref") or s.crossref_from_date
+    client = CrossrefClient(mailto=s.crossref_mailto, per_page=s.crossref_per_page)
+    try:
+        works = [
+            client.normalize(w)
+            for w in client.fetch_works(from_date, None, s.crossref_max_records)
+        ]
+    finally:
+        client.close()
+    works = [w for w in works if w.get("id")]
+    works = _dedupe_by_id(works)
+    tag = re.sub(r"[^0-9A-Za-z-]", "_", from_date or "initial")
+    _write_raw(raw_dir, "crossref", _today(), tag, works)
+    new = _append_dedup(interim_dir / "works.jsonl", works)
+    _write_cursor(s, "crossref", _today())
     return new
 
 
@@ -333,6 +355,7 @@ def _collect_patent_citations(s: Settings, interim_dir: Path, raw_dir: Path) -> 
 
 _HANDLERS = {
     "openalex": _collect_openalex,
+    "crossref": _collect_crossref,
     "arxiv": _collect_arxiv,
     "uspto": _collect_uspto,
     "gdelt": _collect_gdelt,
