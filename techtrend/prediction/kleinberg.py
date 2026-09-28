@@ -131,17 +131,40 @@ def detect_top_bursts(
     return pd.DataFrame(rows[:top_k], columns=["concept", "weight", "n_bursts"])
 
 
+def future_growth(df: pd.DataFrame, future_months: int) -> dict[str, float]:
+    """ground truth 增速：未来窗口相对历史窗口的频次增速（concept_id → growth）。
+
+    growth = 未来月均 - 历史月均（历史为空的新概念月均按 0 计，故新兴概念可上榜）。
+    作为排序类指标（Spearman/NDCG/Top-1 Lift）的真值相关度；与 future_growth_top_k 同口径。
+    """
+    cols = list(df.columns)
+    if len(cols) <= future_months:
+        return {}
+    hist = df[cols[:-future_months]]
+    fut = df[cols[-future_months:]]
+    growth = fut.mean(axis=1) - hist.mean(axis=1)
+    return {str(c): float(growth[c]) for c in growth.index}
+
+
+def future_activity(df: pd.DataFrame, future_months: int) -> dict[str, float]:
+    """ground truth 未来活跃度：最后 future_months 月的月均频次（concept_id → activity）。
+
+    非负，作排序类指标（Spearman/NDCG/Top-1 Lift）的真值相关度（与她「未来活跃度」同口径）；
+    与 `future_growth`（增速，用于 p@k/r@k 的 top-k 真值）并列，两者是同一窗口的两种真值表达。
+    """
+    cols = list(df.columns)
+    if len(cols) <= future_months:
+        return {}
+    fut = df[cols[-future_months:]]
+    return {str(c): float(fut.loc[c].mean()) for c in fut.index}
+
+
 def future_growth_top_k(df: pd.DataFrame, future_months: int, top_k: int) -> list[str]:
     """ground truth：未来窗口（最后 future_months 月）相对历史的频次增速 top-k。
 
     growth = 未来月均 - 历史月均（历史为空的新概念月均按 0 计，故新兴概念可进入 top-k）。
     返回按 growth 降序的 concept ID 列表（前 top_k）。
     """
-    cols = list(df.columns)
-    if len(cols) <= future_months:
-        return []
-    hist = df[cols[:-future_months]]
-    fut = df[cols[-future_months:]]
-    growth = fut.mean(axis=1) - hist.mean(axis=1)
-    ranked = growth.sort_values(ascending=False)
-    return [str(c) for c in ranked.index.tolist()[:top_k]]
+    growth = future_growth(df, future_months)
+    ranked = sorted(growth, key=lambda c: growth[c], reverse=True)
+    return ranked[:top_k]

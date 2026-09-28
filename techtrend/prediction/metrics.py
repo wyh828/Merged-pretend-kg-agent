@@ -2,6 +2,7 @@
 
 `ranked` 与 `truth` 均为一组可哈希的 ID（概念 ID 列表）；`ranked` 有序（按预测置信度降序）。
 """
+import math
 
 
 def _top_k(ranked, k: int) -> set:
@@ -58,3 +59,59 @@ def mape(actual, pred) -> float:
     if not pairs:
         return 0.0
     return sum(abs(a - p) / abs(a) for a, p in pairs) / len(pairs)
+
+
+# ---------------------------------------------------------------------------
+# 排序类指标（阶段 2 合并，来自 pretend-agent scoring.py 的 calculate_spearman_rho /
+# calculate_ndcg_at_k 与 evaluate_ranking 的 top1_lift 公式）
+# ---------------------------------------------------------------------------
+def spearman_rho(pred_scores: dict, true_scores: dict) -> float:
+    """Spearman 秩相关：预测分排序 vs 真值排序的单调相关性，[-1,1]。
+
+    pred_scores / true_scores 均为 {id: 数值}（值越大越靠前）。
+    """
+    common = [t for t in pred_scores if t in true_scores]
+    n = len(common)
+    if n < 2:
+        return 0.0
+
+    sorted_pred = sorted(common, key=lambda t: pred_scores[t], reverse=True)
+    pred_ranks = {t: r for r, t in enumerate(sorted_pred, start=1)}
+    sorted_true = sorted(common, key=lambda t: true_scores[t], reverse=True)
+    true_ranks = {t: r for r, t in enumerate(sorted_true, start=1)}
+
+    d_sq = sum((pred_ranks[t] - true_ranks[t]) ** 2 for t in common)
+    return 1.0 - (6.0 * d_sq) / (n * (n**2 - 1))
+
+
+def ndcg_at_k(ranked: list, relevance: dict, k: int) -> float:
+    """NDCG@K：位置折扣的排序命中质量（关注头部）。
+
+    ranked 有序（预测降序）；relevance 为 {id: 真值分}（分级相关度，2**rel-1 增益）。
+    """
+    if not ranked or not relevance:
+        return 0.0
+    k = min(k, len(ranked))
+    dcg = sum(
+        (2.0 ** max(relevance.get(t, 0.0), 0.0) - 1.0) / math.log2(i + 2)
+        for i, t in enumerate(ranked[:k])
+    )
+    ideal = sorted(relevance, key=lambda t: relevance[t], reverse=True)[:k]
+    idcg = sum(
+        (2.0 ** max(relevance.get(t, 0.0), 0.0) - 1.0) / math.log2(i + 2)
+        for i, t in enumerate(ideal)
+    )
+    if idcg <= 1e-9:
+        return 1.0 if dcg <= 1e-9 else 0.0
+    return dcg / idcg
+
+
+def top1_lift(ranked: list, relevance: dict) -> float | None:
+    """Top-1 Lift：榜首真值 / 全池真值均值，>1 表示有正向选技术能力。"""
+    if not ranked or not relevance:
+        return None
+    top1 = relevance.get(ranked[0], 0.0)
+    mean = sum(relevance.get(r, 0.0) for r in ranked) / len(ranked)
+    if mean <= 0:
+        return None
+    return top1 / mean

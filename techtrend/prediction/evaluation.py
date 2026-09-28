@@ -19,12 +19,22 @@ import pandas as pd
 from techtrend.prediction.metrics import (
     mae,
     mape,
+    ndcg_at_k,
     precision_at_k,
     recall_at_k,
     rmse,
+    spearman_rho,
+    top1_lift,
 )
 
 log = logging.getLogger(__name__)
+
+# 排名回测（目标①）聚合的键：主信号（相对份额动量）+ 消融（Kleinberg）
+_RANK_KEYS = [
+    "p_at_k", "r_at_k",
+    "ndcg_at_3", "ndcg_at_5", "spearman_rho", "top1_lift",
+    "kleinberg_p_at_k", "kleinberg_r_at_k",
+]
 
 
 # ---------------------------------------------------------------------------
@@ -345,7 +355,12 @@ def backtest_regression(monthly: pd.DataFrame, cfg: dict) -> dict:
 def _ranking_fold(
     monthly: pd.DataFrame, test_start: str, test_end: str, cfg: dict,
 ) -> dict | None:
-    from techtrend.prediction.kleinberg import detect_top_bursts, future_growth_top_k
+    from techtrend.prediction.kleinberg import (
+        detect_top_bursts,
+        future_activity,
+        future_growth_top_k,
+    )
+    from techtrend.prediction.signal import share_momentum_rank
 
     cols = list(monthly.columns)
     hist_cols = [c for c in cols if c < test_start]
@@ -355,27 +370,51 @@ def _ranking_fold(
     top_k = cfg["top_k"]
 
     hist_df = monthly[hist_cols]
+    combined = monthly[hist_cols + fut_cols]
+    n_fut = len(fut_cols)
+
+    # 消融基线：Kleinberg 突发排名（目标①原信号，p@k=0 的来源）
     bursts = detect_top_bursts(
         hist_df, top_k, s=cfg["burst_s"], gamma=cfg["burst_gamma"],
     )
-    ranked = bursts["concept"].tolist()
+    kleinberg_ranked = bursts["concept"].tolist()
+    truth = future_growth_top_k(combined, n_fut, top_k)
 
-    # ground truth：test 窗口相对历史的未来增速 top-k
-    truth = future_growth_top_k(monthly[hist_cols + fut_cols], len(fut_cols), top_k)
+    # 主信号：相对份额动量排名（阶段 1 合并，替换 Kleinberg）
+    share_ranked = share_momentum_rank(hist_df, top_k)
+
+    # 排序类指标真值：未来活跃度（非负，Spearman/NDCG/Top-1 Lift 用）
+    relevance = future_activity(combined, n_fut)
+    share_scores = share_momentum_scores(hist_df)
 
     return {
-        "p_at_k": precision_at_k(ranked, truth, top_k),
-        "r_at_k": recall_at_k(ranked, truth, top_k),
+        # 主信号（相对份额动量）
+        "p_at_k": precision_at_k(share_ranked, truth, top_k),
+        "r_at_k": recall_at_k(share_ranked, truth, top_k),
+        "ndcg_at_3": ndcg_at_k(share_ranked, relevance, 3),
+        "ndcg_at_5": ndcg_at_k(share_ranked, relevance, 5),
+        "spearman_rho": spearman_rho(share_scores, relevance),
+        "top1_lift": top1_lift(share_ranked, relevance),
+        # 消融基线（Kleinberg）
+        "kleinberg_p_at_k": precision_at_k(kleinberg_ranked, truth, top_k),
+        "kleinberg_r_at_k": recall_at_k(kleinberg_ranked, truth, top_k),
         "n_hist_months": len(hist_cols),
         "n_test_months": len(fut_cols),
     }
 
 
+def share_momentum_scores(df: pd.DataFrame) -> dict[str, float]:
+    """概念 → 相对份额动量分（供 Spearman 用完整分数，而非仅 top-k 列表）。"""
+    from techtrend.prediction.signal import concept_share_momentum
+
+    return concept_share_momentum(df)
+
+
 def backtest_ranking(monthly: pd.DataFrame, cfg: dict) -> dict:
-    """每折 Kleinberg 突发排名 vs 未来增速 top-k，聚合 precision@k/recall@k。"""
+    """每折相对份额动量（主）+ Kleinberg（消融）排名 vs 未来真值，聚合排序类指标。"""
     if monthly.empty:
         log.warning("月度频次矩阵为空，排名回测跳过")
-        return _aggregate([], ["p_at_k", "r_at_k"])
+        return _aggregate([], _RANK_KEYS)
     cols = list(monthly.columns)
     origins = rolling_origins(cols, cfg["n_splits"], cfg["test_months"], cfg["step_months"])
     fold_metrics: list[dict] = []
@@ -385,10 +424,14 @@ def backtest_ranking(monthly: pd.DataFrame, cfg: dict) -> dict:
             m["fold"] = i
             m["test_start"] = test_start
             fold_metrics.append(m)
-    result = _aggregate(fold_metrics, ["p_at_k", "r_at_k"])
+    result = _aggregate(fold_metrics, _RANK_KEYS)
     log.info(
-        "排名回测：%d/%d 折完成，p@k mean=%.4f±%.4f",
+        "排名回测：%d/%d 折完成，share p@k mean=%.4f±%.4f，NDCG@3 mean=%.4f，"
+        "Spearman ρ mean=%.4f，Top-1 Lift mean=%s",
         len(fold_metrics), len(origins),
         result.get("p_at_k_mean") or 0.0, result.get("p_at_k_std") or 0.0,
+        result.get("ndcg_at_3_mean") or 0.0,
+        result.get("spearman_rho_mean") or 0.0,
+        result.get("top1_lift_mean"),
     )
     return result
