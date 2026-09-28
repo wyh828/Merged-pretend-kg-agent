@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     openalex_max_works: int = 1000
     openalex_per_page: int = 200
 
+    # CrossRef（阶段 3 合并，第 7 源；DOI 锚点 + mailto polite pool + 增量游标）
+    crossref_mailto: str | None = None        # 进 polite pool（推荐填真实邮箱）
+    crossref_from_date: str | None = None     # 增量起点，如 "2023-01-01"（无游标时的种子）
+    crossref_max_records: int = 500
+    crossref_per_page: int = 100
+
     # 结构化抽取（P1）
     extract_max_concepts: int = 5     # belongs_to 每条 work 取 score 前 N 个 concept
     extract_max_refs: int = 10        # cites 每条 work 取前 N 条引用（控图谱规模）
@@ -97,6 +103,11 @@ class Settings(BaseSettings):
     # 融合（目标①集成）
     fusion_weights: str = "burst=0.3,tkg=0.4,forecast=0.3"  # 逗号分隔 name=weight
     fusion_top_k: int = 10
+    # 融合第一路信号源（阶段1 合并）：share(相对份额动量，默认) | kleinberg(突发，消融对照)
+    fusion_signal_source: str = "share"
+
+    # ---- 多智能体协同（阶段 5 合并）----
+    collab_signal_weight: float = 0.5   # 共识分中信号 agent 的权重（1-该值 = 链接预测 agent）
 
     # ---- 验证体系（P4）----
     eval_enable: bool = True

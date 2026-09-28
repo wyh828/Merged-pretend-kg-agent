@@ -19,6 +19,7 @@ from techtrend.prediction.kleinberg import (
     kleinberg_bursts,
 )
 from techtrend.prediction.metrics import precision_at_k, recall_at_k
+from techtrend.prediction.signal import concept_share_momentum, share_momentum_rank
 from techtrend.prediction.rotatE import random_split, run_rotate
 from techtrend.stages.base import Stage
 
@@ -38,15 +39,22 @@ class PredictStage(Stage):
             works = read_jsonl(interim_dir / "works.jsonl")
             triples = read_jsonl(interim_dir / "triples.jsonl")
 
-            # ---- 基线（Kleinberg + RotatE 随机切分），向后兼容 ----
+            # ---- 基线（Kleinberg + 相对份额动量 + RotatE 随机切分），向后兼容 ----
             baseline: dict = {"stage": self.name}
             baseline.update(self._run_kleinberg(s, works, output_dir))
+            baseline.update(self._run_share_signal(s, works, output_dir))
             baseline.update(self._run_rotate(s, triples))
 
             # ---- P3 时序：RotatE 时态对照 + TKG + 回归 + 融合 ----
             temporal: dict = {}
             tkg_out = self._run_tkg(s, triples, output_dir)
             temporal.update(tkg_out)
+            # 阶段 5 合并：持久化未来链接分，供链接预测 agent（collaborate 阶段）复用
+            if tkg_out.get("_tkg_scores"):
+                (output_dir / "tkg_scores.json").write_text(
+                    json.dumps(tkg_out["_tkg_scores"], ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
             forecast_out = self._run_forecast(s, works, output_dir)
             temporal.update(forecast_out)
             temporal.update(
@@ -128,6 +136,36 @@ class PredictStage(Stage):
             log.info("Kleinberg：top-%d 突发概念 = %s", len(ranked), ranked[:5])
         except Exception as exc:  # noqa: BLE001
             log.exception("Kleinberg 运行失败")
+        return out
+
+    def _run_share_signal(self, s, works, output_dir) -> dict:
+        """阶段 1 合并：相对份额动量信号（与 Kleinberg 消融并列，救目标① p@k=0）。"""
+        out = {"share_precision_at_k": None, "share_recall_at_k": None, "share_top_k": []}
+        try:
+            df = build_concept_monthly_counts(works, mode=s.burst_bin)
+            if df.empty:
+                log.warning("无 concept 频次数据，share 信号跳过")
+                return out
+            if df.shape[1] <= s.burst_future_months:
+                log.warning("时间箱不足（%d ≤ %d），share 信号评估跳过",
+                            df.shape[1], s.burst_future_months)
+                return out
+
+            # 与 Kleinberg 同口径剔除筛选概念（AI/CS）
+            exclude = {c.strip() for c in s.openalex_concept_ids.split(",") if c.strip()}
+            df = df.drop(index=[c for c in exclude if c in df.index])
+
+            hist_df = df.iloc[:, : -s.burst_future_months]
+            ranked = share_momentum_rank(hist_df, s.burst_top_k)
+            truth = future_growth_top_k(df, s.burst_future_months, s.burst_top_k)
+
+            out["share_precision_at_k"] = precision_at_k(ranked, truth, s.burst_top_k)
+            out["share_recall_at_k"] = recall_at_k(ranked, truth, s.burst_top_k)
+            out["share_top_k"] = ranked
+            log.info("share 信号：top-%d = %s，p@k=%s",
+                     len(ranked), ranked[:5], out["share_precision_at_k"])
+        except Exception as exc:  # noqa: BLE001
+            log.exception("share 信号运行失败")
         return out
 
     def _run_rotate(self, s, triples) -> dict:
@@ -315,13 +353,16 @@ class PredictStage(Stage):
 
             names = concept_names(works)
 
-            # 突发信号：每个 concept 的最大突发权重
+            # 第一路信号：相对份额动量（默认，救 p@k=0）或 Kleinberg 突发（消融对照）
             hist_df = df.iloc[:, : -s.burst_future_months]
-            burst_signal: dict[str, float] = {}
-            for cid in hist_df.index:
-                series = hist_df.loc[cid].to_numpy(dtype=float)
-                bursts = kleinberg_bursts(series, s=s.burst_s, gamma=s.burst_gamma)
-                burst_signal[str(cid)] = max((b["weight"] for b in bursts), default=0.0)
+            if s.fusion_signal_source == "kleinberg":
+                burst_signal: dict[str, float] = {}
+                for cid in hist_df.index:
+                    series = hist_df.loc[cid].to_numpy(dtype=float)
+                    bursts = kleinberg_bursts(series, s=s.burst_s, gamma=s.burst_gamma)
+                    burst_signal[str(cid)] = max((b["weight"] for b in bursts), default=0.0)
+            else:
+                burst_signal = concept_share_momentum(hist_df)
 
             weights = fusion.parse_weights(s.fusion_weights)
             rows = fusion.fuse(
