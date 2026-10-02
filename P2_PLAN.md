@@ -1,3 +1,5 @@
+> 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
+
 # P2 多源 + 动态 KG + 实体对齐 —— 完整构建计划
 
 ## Context（为什么做这件事）
@@ -416,15 +418,15 @@ docker run -d --name neo4j-techtrend -p 7474:7474 -p 7687:7687 \
 docker run -d --name rsshub -p 1200:1200 diygod/rsshub     # P2 新增
 
 # 2. 装依赖（沿用 P0/P1 conda 环境 + 完整路径）
-E:\conda_envs\techtrend\python.exe -m pip install -r requirements.txt
+& 'F:\Predictive agents\.venv\Scripts\python.exe' -m pip install -r requirements.txt
 
 # 3. 逐源 collect 核对
-E:\conda_envs\techtrend\python.exe main.py --stage collect   # 看 sources 汇总：五源各多少条 / 谁 error
-E:\conda_envs\techtrend\python.exe main.py --stage extract   # triples.jsonl：关系分布含 uses/improves/...（有 key 时）
-E:\conda_envs\techtrend\python.exe main.py --stage align     # alignment.jsonl：anchored/string/llm 命中计数
-E:\conda_envs\techtrend\python.exe main.py --stage build_graph  # http://localhost:7474 查多源节点/边
-E:\conda_envs\techtrend\python.exe main.py --stage predict   # baseline_metrics.json 仍产出（大图上）
-E:\conda_envs\techtrend\python.exe main.py                   # 六阶段全量跑通，exit 0
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage collect   # 看 sources 汇总：五源各多少条 / 谁 error
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage extract   # triples.jsonl：关系分布含 uses/improves/...（有 key 时）
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage align     # alignment.jsonl：anchored/string/llm 命中计数
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage build_graph  # http://localhost:7474 查多源节点/边
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage predict   # baseline_metrics.json 仍产出（大图上）
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py                   # 六阶段全量跑通，exit 0
 ```
 
 **验收标准**：

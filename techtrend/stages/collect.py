@@ -44,7 +44,20 @@ def _append_dedup(interim_path: Path, records: list[dict]) -> int:
 
 
 def _write_raw(raw_dir: Path, source: str, run_date: str, tag: str, records: list[dict]) -> None:
-    write_jsonl(raw_dir / source / run_date / f"{source}_{tag}.jsonl", records)
+    directory = raw_dir / source / run_date
+    directory.mkdir(parents=True, exist_ok=True)
+    version = 0
+    while True:
+        path = directory / f"{source}_{tag}_{version:02d}.jsonl"
+        try:
+            # Exclusive creation preserves prior snapshots even on concurrent runs.
+            import json
+            with path.open("x", encoding="utf-8") as file:
+                for record in records:
+                    file.write(json.dumps(record, ensure_ascii=False) + "\n")
+            return
+        except FileExistsError:
+            version += 1
 
 
 def _read_cursor(s: Settings, name: str) -> str | None:
@@ -114,7 +127,8 @@ class CollectStage(Stage):
                 summary[src] = "error"
 
         log.info("collect 完成：%s", summary)
-        return {"stage": self.name, "status": "ok", "sources": summary}
+        status = "error" if any(v in ("error", "unknown") for v in summary.values()) else "ok"
+        return {"stage": self.name, "status": status, "sources": summary}
 
 
 # ---------------------------------------------------------------------------

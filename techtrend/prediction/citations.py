@@ -107,6 +107,8 @@ def _sample_patents(
       低被引箱也保底覆盖（修正「top-N 总被引」系统性排除 emerging/growth 的选样偏）。
     - top_total：旧行为，总被引 top-max_patents。
     """
+    if not eligible:
+        return set()
     if sampling == "stratified":
         import math
 
@@ -184,8 +186,8 @@ def build_patent_citation_monthly(
 
     if not rows:
         return pd.DataFrame()
-    df = pd.DataFrame.from_dict(rows, orient="index").ffill(axis=1).fillna(0)
-    return df.reindex(sorted(df.columns), axis=1)
+    df = pd.DataFrame.from_dict(rows, orient="index")
+    return df.reindex(sorted(df.columns), axis=1).ffill(axis=1).fillna(0)
 
 
 # S 曲线阶段分类（目标④）已泛化到 prediction/lifecycle.py（P6），

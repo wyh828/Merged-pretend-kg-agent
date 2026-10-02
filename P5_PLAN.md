@@ -1,3 +1,5 @@
+> 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
+
 # P5 hermes-agent 自动化 —— 完整构建计划
 
 > 本文档承接 [PROJECT_PLAN.md](PROJECT_PLAN.md) §六「hermes-agent 编排层」、§七「分阶段路线图」P5 行，以及文末
@@ -266,7 +268,7 @@ parser.add_argument("--auto-approve", action="store_true")                 # 覆
 ### 7.2 cronjob 定时（主选调度）
 
 `hermes/config/cronjobs.example.yaml`：一条 cronjob，cron 表达式 `0 3 * * *`（本地时区），动作 = 执行
-`E:\conda_envs\techtrend\python.exe cron.py --mode daily --notify`（hermes-agent 侧填底层 python 解释器绝对路径，见记忆：不用坏掉的 `python` 桩）。
+`F:\Predictive agents\.venv\Scripts\python.exe cron.py --mode daily --notify`（hermes-agent 侧填底层 python 解释器绝对路径，见记忆：不用坏掉的 `python` 桩）。
 
 ### 7.3 角色 agent 委派（多智能体贡献点）
 
@@ -306,17 +308,17 @@ parser.add_argument("--auto-approve", action="store_true")                 # 覆
 
 ```bash
 # 底层独立性（验收③）：不依赖 hermes-agent
-E:\conda_envs\techtrend\python.exe cron.py --mode daily --notify
-E:\conda_envs\techtrend\python.exe cron.py --dry-run          # 只看角色顺序不落库
+& 'F:\Predictive agents\.venv\Scripts\python.exe' cron.py --mode daily --notify
+& 'F:\Predictive agents\.venv\Scripts\python.exe' cron.py --dry-run          # 只看角色顺序不落库
 type output\run_manifest.jsonl
 type output\notify_latest.md
 
 # 连续 3 天增量不重复（验收②）：同一天触发 2 次，第 2 次应 0 新增短路
-E:\conda_envs\techtrend\python.exe cron.py --mode daily        # 第 1 次：各源有新增
-E:\conda_envs\techtrend\python.exe cron.py --mode daily        # 第 2 次：noop=true（除 github star 快照外无重复数据）
+& 'F:\Predictive agents\.venv\Scripts\python.exe' cron.py --mode daily        # 第 1 次：各源有新增
+& 'F:\Predictive agents\.venv\Scripts\python.exe' cron.py --mode daily        # 第 2 次：noop=true（除 github star 快照外无重复数据）
 
 # 降级调度（验收③ Plan B）
-E:\conda_envs\techtrend\python.exe -m techtrend.orchestration.scheduler   # 需先 SCHEDULE_ENABLE=true（或 --once 参数）
+& 'F:\Predictive agents\.venv\Scripts\python.exe' -m techtrend.orchestration.scheduler   # 需先 SCHEDULE_ENABLE=true（或 --once 参数）
 ```
 
 **验收标准**（对应 PROJECT_PLAN P5 行「每日无人值守跑通」）：
@@ -343,7 +345,7 @@ E:\conda_envs\techtrend\python.exe -m techtrend.orchestration.scheduler   # 需�
   否则永远短路不了。
 - **本机 Clash 代理方向相反**（见记忆 [[windows-clash-proxy-localhost]]）：本地 RSSHub 请求要 `trust_env=False`；
   外网 Telegram/Discord 推送要 `trust_env=True` 走代理。notify.py 内必须按目标 host 区分，不能一刀切。
-- **python 解释器**：scheduler/cronjob 一律写 `E:\conda_envs\techtrend\python.exe`（见记忆 [[python-interpreter-path]]），
+- **python 解释器**：scheduler/cronjob 一律写 `F:\Predictive agents\.venv\Scripts\python.exe`（见记忆 [[python-interpreter-path]]），
   不依赖 PATH 里坏掉的 `python` 桩。
 - **HITL 卡死风险**：`review_enable_hitl=true` + `auto=false` 时若无人应答，runbook 会一直等 → 加超时（默认不限但可配），
   且无人值守验收必须用 auto=true。

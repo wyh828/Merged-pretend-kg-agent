@@ -28,10 +28,10 @@ log = logging.getLogger(__name__)
 
 # 底层 9 阶段名（含第 8 阶段 notify、第 9 阶段 visualize）
 ALL_STAGES: tuple[str, ...] = (
-    "collect", "extract", "align", "build_graph", "predict", "evaluate", "report", "notify", "visualize",
+    "collect", "extract", "align", "build_graph", "predict", "evaluate", "collaborate", "report", "notify", "visualize",
 )
 # 短路守卫跳过的下游阶段（report+notify 仍执行）
-_DOWNSTREAM = ("extract", "align", "build_graph", "predict", "evaluate")
+_DOWNSTREAM = ("extract", "align", "build_graph", "predict", "evaluate", "collaborate")
 
 
 def _run_id() -> str:
@@ -107,7 +107,7 @@ def _review_checkpoint(settings: Settings, run_id: str, results: list[dict]) -> 
                 continue
             appr_path.unlink(missing_ok=True)  # 消费掉
             if not approved:
-                log.warning("HITL 审校被拒绝，仍继续（无人值守不阻断）")
+                log.warning("HITL 审校被拒绝，跳过报告和推送")
             return approved
         if deadline is not None and time.time() > deadline:
             log.warning("HITL 审校超时（%ds），按 auto 放行", settings.review_timeout_seconds)
@@ -148,7 +148,7 @@ def run_daily(settings: Settings) -> dict:
             results.append(r)
             manifest_stages[st] = r.get("status", "error")
         # 4) analyst → predict　5) integrator → evaluate
-        for st in ("predict", "evaluate"):
+        for st in ("predict", "evaluate", "collaborate"):
             r = _run_stage(stage_pool, st, role_label=STAGE_ROLE.get(st, "analyst"))
             results.append(r)
             manifest_stages[st] = r.get("status", "error")
@@ -158,12 +158,15 @@ def run_daily(settings: Settings) -> dict:
 
     # 7) reporter → report + notify + visualize
     for st in ("report", "notify", "visualize"):
+        if not hitl_approved:
+            manifest_stages[st] = "skipped"
+            continue
         r = _run_stage(stage_pool, st, role_label="reporter")
         results.append(r)
         manifest_stages[st] = r.get("status", "error")
 
     finished = datetime.now()
-    status = "ok" if all(manifest_stages[s] in ("ok", "skipped") for s in ALL_STAGES) else "error"
+    status = "ok" if hitl_approved and all(manifest_stages[s] in ("ok", "skipped") for s in ALL_STAGES) else "error"
 
     manifest = {
         "run_id": run_id,

@@ -2,7 +2,7 @@
 
 覆盖：EMA / robust 归一化 / safe-growth 的数学正确性，以及「加速扩张的黑马
 > 平稳领跑的成熟概念」的排名性质。运行（仓库根目录）：
-    E:\\conda_envs\\techtrend\\python.exe -m pytest tests/test_signal_scoring.py -v
+    F:\\Predictive agents\\.venv\\Scripts\\python.exe -m pytest tests/test_signal_scoring.py -v
 """
 from __future__ import annotations
 

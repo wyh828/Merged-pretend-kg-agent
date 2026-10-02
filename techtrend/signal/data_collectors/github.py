@@ -23,6 +23,7 @@ import asyncio
 from typing import Any, Iterable
 
 from dotenv import load_dotenv
+from techtrend.config import PROJECT_ROOT
 
 from techtrend.signal.config import PipelineConfig
 from techtrend.signal.data_collectors.base import register
@@ -110,7 +111,7 @@ class GithubCollector:
     ) -> list[dict[str, Any]]:
         # GitHub needs the attempt_root to locate .env for GITHUB_TOKEN.
         # We resolve it from the data_root (project root -> attempt root).
-        attempt_root = cfg.data_root.parent / "Attempt"
+        attempt_root = PROJECT_ROOT
         _load_env(attempt_root)
 
         raw_cache_dir = cfg.raw_api_path / "github"

@@ -1,3 +1,5 @@
+> 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
+
 # P1 单源 + 静态 KG + 基线 —— 完整构建计划
 
 ## Context（为什么做这件事）
@@ -215,14 +217,14 @@ docker run -d --name neo4j-techtrend -p 7474:7474 -p 7687:7687 \
   -e NEO4J_AUTH=neo4j/<密码> -v neo4j_data:/data neo4j:5
 
 # 2. 装依赖（沿用 P0 conda 环境 + 完整路径）
-E:\conda_envs\techtrend\python.exe -m pip install -r requirements.txt
+& 'F:\Predictive agents\.venv\Scripts\python.exe' -m pip install -r requirements.txt
 
 # 3. 逐阶段跑 + 全量
-E:\conda_envs\techtrend\python.exe main.py --stage collect      # works.jsonl 数量/日期/去重
-E:\conda_envs\techtrend\python.exe main.py --stage extract      # triples.jsonl 四种关系分布
-E:\conda_envs\techtrend\python.exe main.py --stage build_graph  # http://localhost:7474 查节点/边
-E:\conda_envs\techtrend\python.exe main.py --stage predict      # baseline_metrics.json 含 filtered MRR/Hits@K/precision@k
-E:\conda_envs\techtrend\python.exe main.py                      # 全量跑通，exit 0
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage collect      # works.jsonl 数量/日期/去重
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage extract      # triples.jsonl 四种关系分布
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage build_graph  # http://localhost:7474 查节点/边
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage predict      # baseline_metrics.json 含 filtered MRR/Hits@K/precision@k
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py                      # 全量跑通，exit 0
 ```
 
 **验收标准**：`output/baseline_metrics.json` 内出现非空 filtered MRR、Hits@1/3/10、precision@k/recall@k。

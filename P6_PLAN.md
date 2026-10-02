@@ -1,3 +1,5 @@
+> 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
+
 # P6 可视化 / 报告 —— 完整构建计划
 
 > 本文档承接 [PROJECT_PLAN.md](PROJECT_PLAN.md) §七「分阶段路线图」P6 行（趋势图 + S 曲线阶段 + 周报，交付前端/报告，验收「可演示」），
@@ -302,9 +304,9 @@ class VisualizeStage(Stage):
 ## 8. 验证方式 + 验收标准
 
 ```bash
-E:\conda_envs\techtrend\python.exe main.py --list            # 输出 9 阶段（含 visualize）
-E:\conda_envs\techtrend\python.exe main.py --stage visualize # 渲染 dashboard + charts（零重算）
-E:\conda_envs\techtrend\python.exe cron.py --mode weekly     # 手动/演示周报
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --list            # 输出 9 阶段（含 visualize）
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage visualize # 渲染 dashboard + charts（零重算）
+& 'F:\Predictive agents\.venv\Scripts\python.exe' cron.py --mode weekly     # 手动/演示周报
 # 浏览器双击 output/dashboard.html：无网络请求、四目标图齐全、明暗主题可切
 ```
 
@@ -333,7 +335,7 @@ E:\conda_envs\techtrend\python.exe cron.py --mode weekly     # 手动/演示周�
   报告须分开标注，不混比。
 - **周报与日报的关系**：周报只聚合**已有** manifest 与指标，不触发新采集/预测；`--mode weekly` 是纯渲染，误触发不会烧 LLM/CPU。
 - **明暗主题**：SVG 颜色走 CSS 变量 + `prefers-color-scheme`，不硬编码 hex；实现前先读 `dataviz` skill 定色板。
-- **python 解释器**（承记忆 [[python-interpreter-path]]）：所有命令写 `E:\conda_envs\techtrend\python.exe`，不依赖坏掉的 `python` 桩。
+- **python 解释器**（承记忆 [[python-interpreter-path]]）：所有命令写 `F:\Predictive agents\.venv\Scripts\python.exe`，不依赖坏掉的 `python` 桩。
 - **不新增依赖**：`requirements.txt` 不改；若验收时发现 matplotlib/plotly 确实必要（如周报要嵌 PNG），再单列讨论，不默认引入。
 
 ---

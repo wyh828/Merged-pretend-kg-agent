@@ -37,6 +37,16 @@ from techtrend.signal.http_client import PoliteApiClient, CachedResponse
 class SourceCollector(Protocol):
     """Unified interface for every data source collector."""
 
+    source_name: str
+
+    async def collect(
+        self,
+        cfg: PipelineConfig,
+        http_settings: dict[str, Any],
+        source_cfg: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        ...
+
 _COLLECTORS: dict[str, type[SourceCollector]] = {}
 
 def register(name: str):
@@ -49,16 +59,6 @@ def get_collector_class(name: str) -> type[SourceCollector]:
     if name not in _COLLECTORS:
         raise ValueError(f"Unknown collector: {name}")
     return _COLLECTORS[name]
-
-    source_name: str
-
-    async def collect(
-        self,
-        cfg: PipelineConfig,
-        http_settings: dict[str, Any],
-        source_cfg: dict[str, Any],
-    ) -> list[dict[str, Any]]:
-        ...
 
 class MonthCountCollector:
     """Base class for sources that query API for count per month window."""

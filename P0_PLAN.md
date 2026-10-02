@@ -1,3 +1,5 @@
+> 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
+
 # P0 脚手架 —— 实施计划
 
 ## Context（为什么做这件事）
@@ -19,9 +21,9 @@ P0 本身不写业务逻辑，但它决定了 P1–P6 的骨架：目录怎么�
 
 ### 工具链决策依据
 
-用户 conda,python环境.docx 已沉淀稳定工作流：conda 环境建在 `E:\conda_envs\<name>`、用完整路径 `E:\conda_envs\<name>\python.exe xxx.py` 运行、装包用 `...\python.exe -m pip install`。因此：
+用户 conda,python环境.docx 已沉淀稳定工作流：conda 环境建在 `F:\Predictive agents\.venv`、用完整路径 `F:\Predictive agents\.venv\Scripts\python.exe xxx.py` 运行、装包用 `...\python.exe -m pip install`。因此：
 
-- 用 `conda create -p E:\conda_envs\techtrend python=3.12` 建环境；
+- 用 `conda create -p F:\Predictive agents\.venv python=3.12` 建环境；
 - 全程完整路径运行，不依赖 `conda activate`；
 - 依赖写在 requirements.txt（pip 原生）。
 
@@ -54,8 +56,8 @@ tech-trend-kg-agents/
 ## 验证方式
 
 ```bash
-conda create -p E:\conda_envs\techtrend python=3.12 -y
-E:\conda_envs\techtrend\python.exe -m pip install -r requirements.txt
-E:\conda_envs\techtrend\python.exe main.py   # 预期：打印 5 阶段桩日志，exit 0
-E:\conda_envs\techtrend\python.exe cron.py   # 与 main.py 等价
+& 'D:\ide\Anaconda\python.exe' -m venv .venv
+& 'F:\Predictive agents\.venv\Scripts\python.exe' -m pip install -r requirements.txt
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py   # 预期：打印 5 阶段桩日志，exit 0
+& 'F:\Predictive agents\.venv\Scripts\python.exe' cron.py   # 与 main.py 等价
 ```

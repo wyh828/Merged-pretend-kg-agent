@@ -1,3 +1,5 @@
+> 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
+
 # P3 优化 + P4 验证体系 —— 完整构建计划
 
 > 本文档承接 [P3_PLAN.md](P3_PLAN.md)「验证结果」（**P3 验收未达标**：CyGNet 时态 MRR 0.4790 < RotatE 时态对照 0.6539）与 [PROJECT_PLAN.md](PROJECT_PLAN.md) 七「分阶段路线图」P4 行。
@@ -377,10 +379,10 @@ class EvaluateStage(Stage):
 
 ```bash
 # 前置：已有 P2/P3 采集+抽取+对齐产物（data/interim 就绪）；LLM key 已配（定向抽取需）
-E:\conda_envs\techtrend\python.exe main.py --stage extract   # 重跑抽取，产出定向 tech→tech 边（进 triples.jsonl）
-E:\conda_envs\techtrend\python.exe main.py --stage align     # 折叠 + 映射 entity_id
-E:\conda_envs\techtrend\python.exe main.py --stage predict   # 定向图 TKG + 回归 + 融合
-E:\conda_envs\techtrend\python.exe main.py --stage evaluate  # P4 walk-forward 回测
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage extract   # 重跑抽取，产出定向 tech→tech 边（进 triples.jsonl）
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage align     # 折叠 + 映射 entity_id
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage predict   # 定向图 TKG + 回归 + 融合
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage evaluate  # P4 walk-forward 回测
 type output\eval_report.md
 type output\leak_check.json
 ```

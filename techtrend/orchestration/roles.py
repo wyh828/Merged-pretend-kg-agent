@@ -31,7 +31,7 @@ ROLES: tuple[Role, ...] = (
          stages=("predict",), runs_after=("extractor",),
          parallel_subtasks=("burst", "tkg", "forecast")),
     Role("integrator", "预测/集成 agent：融合多路信号 + 回测校验",
-         stages=("predict", "evaluate"), runs_after=("analyst",)),
+         stages=("predict", "evaluate", "collaborate"), runs_after=("analyst",)),
     Role("reviewer", "审校 agent：报告前暂停人工确认（HITL）",
          stages=(), runs_after=("integrator",), human_checkpoint=True),
     Role("reporter", "报告 agent：生成日/周报告 + 仪表盘 + 推送",

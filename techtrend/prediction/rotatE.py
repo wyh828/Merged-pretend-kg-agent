@@ -5,6 +5,7 @@
 - run_rotate：pykeen.pipeline(model="RotatE") → 取 filtered MRR / Hits@1/3/10。
 """
 import logging
+from techtrend.config import configure_model_storage
 from typing import Iterable
 
 log = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ def _as_array(triples: Iterable[dict]):
 
 def build_triples_factory(triples: Iterable[dict]):
     """构建 TriplesFactory（实体/关系 ID 编码）。"""
+    configure_model_storage()
     from pykeen.triples import TriplesFactory
 
     return TriplesFactory.from_labeled_triples(triples=_as_array(triples))
@@ -86,6 +88,7 @@ def run_rotate(
     device: str | None = None,
 ) -> dict:
     """跑 pykeen RotatE，返回 filtered 指标 dict。"""
+    configure_model_storage()
     from pykeen.pipeline import pipeline
     from pykeen.triples import TriplesFactory
 

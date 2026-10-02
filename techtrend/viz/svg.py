@@ -102,7 +102,7 @@ def line_chart(
         return ""
     plot_w = width - _LEFT - _RIGHT
     plot_h = height - _TOP - _BOTTOM
-    ys = [v for _, vals in series for v in vals if v is not None]
+    ys = [v for _, vals in series for v in vals if v is not None and math.isfinite(v)]
     ymin = min(0.0, min(ys)) if ys else 0.0
     ymax = max(ys) if ys else 1.0
     if ymax <= ymin:
@@ -150,14 +150,30 @@ def line_chart(
     roles = list(roles) if roles else [f"series-{i+1}" for i in range(len(series))]
     for k, (label, vals) in enumerate(series):
         role = roles[k] if k < len(roles) else f"series-{k+1}"
-        pts = " ".join(f"{X(i):.1f},{Y(v):.1f}" for i, v in enumerate(vals) if v is not None)
+        segments = []
+        points = []
+        valid = []
+        for i, v in enumerate(vals):
+            if v is None or not math.isfinite(v):
+                if points:
+                    segments.append(points)
+                    points = []
+                continue
+            points.append(f"{X(i):.1f},{Y(v):.1f}")
+            valid.append((i, v))
+        if points:
+            segments.append(points)
+        for segment in segments:
+            pts = " ".join(segment)
+            p.append(
+                f'<polyline points="{pts}" fill="none" stroke="{color(role)}" stroke-width="2" '
+                f'stroke-linecap="round" stroke-linejoin="round"/>'
+            )
+        if not valid:
+            continue
+        li, last = valid[-1]
         p.append(
-            f'<polyline points="{pts}" fill="none" stroke="{color(role)}" stroke-width="2" '
-            f'stroke-linecap="round" stroke-linejoin="round"/>'
-        )
-        li = len(vals) - 1
-        p.append(
-            f'<circle cx="{X(li):.1f}" cy="{Y(vals[li]):.1f}" r="4" fill="{color(role)}" '
+            f'<circle cx="{X(li):.1f}" cy="{Y(last):.1f}" r="4" fill="{color(role)}" '
             f'stroke="{color("surface-1")}" stroke-width="2"/>'
         )
     p.append(_legend([lbl for lbl, _ in series], roles, width))
@@ -197,15 +213,15 @@ def hbar_chart(
         yy = Y(i)
         w = max(2.0, (v / vmax) * plot_w)
         p.append(
-            f'<text x="{_LEFT}" y="{yy + 4:.1f}" font-family="{_FONT}" font-size="11.5" '
+            f'<text x="{label_w}" y="{yy + 4:.1f}" font-family="{_FONT}" font-size="11.5" '
             f'fill="{color("text-secondary")}" text-anchor="end">{_esc(str(label)[:34])}</text>'
         )
         p.append(
-            f'<rect x="{_LEFT + 8}" y="{yy - bar_h / 2:.1f}" width="{w:.1f}" height="{bar_h}" '
+            f'<rect x="{label_w + 8}" y="{yy - bar_h / 2:.1f}" width="{w:.1f}" height="{bar_h}" '
             f'rx="4" fill="{color(role)}"/>'
         )
         p.append(
-            f'<text x="{_LEFT + 8 + w + 6:.1f}" y="{yy + 4:.1f}" font-family="{_FONT}" '
+            f'<text x="{label_w + 8 + w + 6:.1f}" y="{yy + 4:.1f}" font-family="{_FONT}" '
             f'font-size="11" fill="{color("text-secondary")}" '
             f'style="font-variant-numeric:tabular-nums">{_esc(_fmt(v, yfmt))}</text>'
         )

@@ -1,5 +1,7 @@
 # 敏感文件
 .env
+.local_backups/
+resources/
 
 # 运行时产物（保留目录占位 .gitkeep，忽略其中内容）
 data/*

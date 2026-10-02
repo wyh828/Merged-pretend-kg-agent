@@ -2,39 +2,60 @@
 
 多源数据驱动的技术趋势预测系统 —— 通过论文/专利/新闻/GitHub 多源数据构建动态知识图谱，多智能体协同预测技术趋势。
 
-> 完整方案见 [PROJECT_PLAN.md](PROJECT_PLAN.md)；本阶段（P1）已实现「单源 + 静态 KG + 基线」，实施细节见 [P1_PLAN.md](P1_PLAN.md)。
+> 当前本机版本基于 Merged-pretend-kg-agent 最新获取提交，包含十阶段流程。完整目标见 [PROJECT_PLAN.md](PROJECT_PLAN.md)；本机检查范围见 [function_review_00.md](Attempt/docs/function_review_00.md)。
 
-## 环境搭建（conda + 完整路径，免 activate）
+## 本机环境与运行（Windows PowerShell）
 
-```bash
-# 1. 建专用环境到 E 盘（Python 3.12）
-conda create -p E:\conda_envs\techtrend python=3.12 -y
+项目根目录：`F:\Predictive agents`。所有相对存储路径按项目根目录解析。
 
-# 2. 装依赖（完整路径，不依赖 conda activate）
-E:\conda_envs\techtrend\python.exe -m pip install -r requirements.txt
-
-# 3. 配置（复制模板后填入 OpenAlex key / Neo4j 密码等）
-copy .env.example .env
+```powershell
+Set-Location 'F:\Predictive agents'
+# 本次已建立 .venv；独立重建时使用本机可用的 Python：
+& 'D:\ide\Anaconda\python.exe' -m venv .venv
+& '.\.venv\Scripts\python.exe' -m pip install -r requirements.txt
+# .env 已创建，仅含路径和关闭的调度/推送开关；按 .env.example 填入服务配置。
+& '.\.venv\Scripts\python.exe' main.py --list
+& '.\.venv\Scripts\python.exe' main.py --stage visualize
+& '.\.venv\Scripts\python.exe' -m pytest tests -q --basetemp=output/test_tmp_00 -p no:cacheprovider
 ```
 
-## Neo4j（P1 起用，本地 Docker）
+本次验证环境为 Python 3.13.9，`.venv` 使用 `--system-site-packages` 复用本机 Anaconda 的已装包；
+环境快照见 `Attempt/docs/local_environment_00.txt`。独立重建命令不复用系统包，需重新安装全部依赖。
+Neo4j（`bolt://localhost:7687`）需要单独配置，数据库密码和 API key 写在根目录 `.env`。
+默认不启动定时任务或对外推送。完整采集/训练需相应数据与外部服务。
 
-```bash
-docker run -d --name neo4j-techtrend -p 7474:7474 -p 7687:7687 \
-  -e NEO4J_AUTH=neo4j/<你的密码> -v neo4j_data:/data neo4j:5
-```
+看板：`output/dashboard.html`；分析文档：`output/report.md` / `eval_report.md` / `weekly_report.md`。
+以下原仓库的阶段数字为历史记录，不能视为本机已复现的实验结果。
 
-> Neo4j 5 不接受默认密码 `neo4j`，需自定义（与 `.env` 的 `NEO4J_PASSWORD` 一致）。
-> 浏览器控制台 `http://localhost:7474`，bolt `bolt://localhost:7687`。
+## 本机修订 00（2026-10-03）
 
-## 运行
+当前分支 `codex/merged-local-00`，上游提交 `1b87827418a5603b2df709a234d769171d655c94`。
+旧版本完整保存于 `.local_backups/pre_merged_import_00/`，旧提交保留于 `codex/checkpoint-before-merged-00`。
+原远端 `origin` 保留，新增 `merged-upstream` 指向新仓库；本次仅本地操作，未推送。
 
-```bash
-E:\conda_envs\techtrend\python.exe main.py                    # 跑全部阶段
-E:\conda_envs\techtrend\python.exe main.py --list             # 列出阶段
-E:\conda_envs\techtrend\python.exe main.py --stage collect    # 只跑某阶段
-E:\conda_envs\techtrend\python.exe cron.py                    # 定时入口（P5 接 hermes-agent）
-```
+代码阅读与核验规则已加入 AGENTS.md：先读接口、调用关系、输入输出和目标计划；复现单个问题，修订后运行专项检查，通过再进入下一项。函数清单共 448 项、模块导入 81 项；清单不代表所有函数的真实业务行为已验证。
+
+当前流程：collect → extract → align → build_graph → predict → evaluate → collaborate → report → notify → visualize。
+
+| 阶段 | 阻塞与问题 | 本机成果与验证 | 后续优化方法 |
+|---|---|---|---|
+| L0 获取与保护 | 原工程含未提交改动和数据 | 新分支基于上游 HEAD；完整旧文件、Git bundle、patch 与元数据备份 | 旧数据迁入前校验 schema，不直接覆盖 |
+| L1 路径与环境 | 路径依赖 CWD；旧解释器失效；缺主干依赖；PyKEEN 默认写用户目录 | 根目录定位 `.env`/数据/输出/日志，工程内模型缓存；依赖安装、pip check 和路径专项测试通过 | 使用环境快照建立完全隔离环境 |
+| L2 阶段编排 | 报错仍退出 0；report 早于 evaluate；每日漏 collaborate；拒绝审校仍推送 | 失败返回 1；十阶段顺序统一；拒绝后跳过报告/推送；专项测试通过 | 外部服务联调后检查真实 manifest |
+| L3 函数接口 | 采集器协议错误缩进；USPTO 请求参数不匹配；LLM 异常 JSON 崩溃；源失败仍报 ok | 修复并分别测试；同日 raw 快照使用 `_00/_01` 独立保留；Crossref DOI 不再截断碰撞，来源与对齐正确 | 实际 API/LLM 验证；检查作者实体与数据覆盖 |
+| L4 数值与时序存储 | NDCG 指数溢出；专利空样本崩溃；列排序前填充导致错误累积值 | 同尺度消除避免溢出，保留 NDCG 公式；先排序再填充；专项测试通过 | 完整日历补齐及评估口径需复核 |
+| L5 报告与看板 | 已有看板，文档未整合；缺对照却判断输赢；末折缺失图表崩溃 | 复用 HTML/SVG，看板整合报告、回测报告、LLM 报告、周报、三份计划；增加榜单/协同表；缺数据显示未验证；专项测试通过 | 用真实产物核验图表、报告结论和数据时效 |
+| L6 全流程与研究评估 | 尚无本机 Neo4j/API 配置或新数据；疑似时间泄漏与指标口径不一致 | 81 模块导入、RotatE/CyGNet 各 1 轮 CPU 合成样本检查通过；未宣称真实预测成功 | 等待用户确定数据/服务复用方式与评估修订许可，再逐项修订并生成独立实验版本 |
+
+专项测试、模块检查、命令与风险说明见 [local_import_00.md](Attempt/docs/local_import_00.md)、[function_review_00.md](Attempt/docs/function_review_00.md)，环境见 [local_environment_00.txt](Attempt/docs/local_environment_00.txt)。
+
+本机验证结果：54 项测试通过；compileall、pip check、git diff --check 通过；81 模块无导入错误；两个模型的合成样本 CPU 检查通过。实际运行 `main.py --stage evaluate` 在无 triples 数据时退出码为 1；`--stage visualize` 可生成空状态看板和周报。CPU 检查出现 PyTorch/PyKEEN 的无加速器、保守 batch_size 提示，不影响小样本检查；不据此保证大数据训练的资源需求。
+
+测试环境阻塞记录：普通运行测试成功；一次提权复查使用默认系统临时目录时发生 ACL 冲突（39 项通过、15 项 fixture 建立失败）。改用上述工程内 `--basetemp` 并关闭 pytest 缓存后 54 项全部通过。重复运行会清理该临时测试目录，因此它只用于合成测试，不能放真实数据或实验产物。
+
+**当前限制**：真实数据全量流程尚未完成；外部 API、Neo4j、LLM、云备份、通知与定时未联调。合成样本指标仅用于执行检查，不能用于研究结论。评估方法问题和未检验的函数逐项列于审查文档。
+
+## 上游历史架构与实验记录（以下内容未经本机复现）
 
 五阶段数据流（P1）：
 
@@ -103,13 +124,13 @@ data/ output/ logs/      运行时目录（gitignore 忽略）
 ## 环境阻塞（`--list` 依赖缺口）—— 已解决
 
 - **阻塞现象**：`main.py --list` 在 import 阶段退出，报 `No module named 'tenacity'`。
-- **实况核实**：conda 环境 `E:\conda_envs\techtrend`（Python 3.12）**已装齐主干全部依赖**
+- **实况核实**：上游历史验证环境（Python 3.12；本机为 Python 3.13.9）**已装齐主干全部依赖**
   （tenacity 9.1.4 / pykeen 1.11.1 / neo4j 6.3.1 / feedparser 6.0.14 / RapidFuzz 3.14.6 /
   scikit-learn 1.9.1 / torch 2.12.1 / numpy / pandas / httpx 等），`import main` 已验证通过。
   提示中的「缺 tenacity/neo4j…」是**陈旧信息**——实为误用了系统 `py` 3.12.3 而非 conda 解释器所致。
-- **最优解法**：`E:\conda_envs\techtrend\python.exe -m pip install -r requirements.txt`
+- **最优解法**：`F:\Predictive agents\.venv\Scripts\python.exe -m pip install -r requirements.txt`
   （补齐 aiohttp / apscheduler / pytest 这 3 个，其余已满足）；之后一律用
-  `E:\conda_envs\techtrend\python.exe` 跑，不用裸 `python`/`py`。
+  `F:\Predictive agents\.venv\Scripts\python.exe` 跑，不用裸 `python`/`py`。
 - **证据**：补齐后 `main.py --list` 列出 10 个阶段（含新 `collaborate`）；`pytest tests/` 11 用例全绿。
 
 ## 阶段 0 —— 统一仓库 + 引入 `techtrend/signal` 子包（已完成并推送）

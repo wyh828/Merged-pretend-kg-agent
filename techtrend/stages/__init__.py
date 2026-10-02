@@ -21,9 +21,9 @@ def get_default_stages(settings: Settings) -> list[Stage]:
         AlignStage(settings),
         BuildGraphStage(settings),
         PredictStage(settings),
-        ReportStage(settings),
         EvaluateStage(settings),
         CollaborateStage(settings),
+        ReportStage(settings),
         NotifyStage(settings),
         VisualizeStage(settings),
     ]

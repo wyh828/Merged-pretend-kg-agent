@@ -92,13 +92,21 @@ def ndcg_at_k(ranked: list, relevance: dict, k: int) -> float:
     if not ranked or not relevance:
         return 0.0
     k = min(k, len(ranked))
+    # For large activity counts scale both DCG and IDCG by 2**(-max_rel).
+    # The common scale cancels in their ratio, preserving exponential gain.
+    max_rel = max(max(v, 0.0) for v in relevance.values())
+    def gain(t):
+        rel = max(relevance.get(t, 0.0), 0.0)
+        if max_rel <= 100:
+            return 2.0 ** rel - 1.0
+        return 2.0 ** (rel - max_rel) * (-math.expm1(-rel * math.log(2.0)))
     dcg = sum(
-        (2.0 ** max(relevance.get(t, 0.0), 0.0) - 1.0) / math.log2(i + 2)
+        gain(t) / math.log2(i + 2)
         for i, t in enumerate(ranked[:k])
     )
     ideal = sorted(relevance, key=lambda t: relevance[t], reverse=True)[:k]
     idcg = sum(
-        (2.0 ** max(relevance.get(t, 0.0), 0.0) - 1.0) / math.log2(i + 2)
+        gain(t) / math.log2(i + 2)
         for i, t in enumerate(ideal)
     )
     if idcg <= 1e-9:

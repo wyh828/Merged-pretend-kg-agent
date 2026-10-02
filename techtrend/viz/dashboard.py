@@ -130,6 +130,11 @@ th{{color:var(--text-secondary);font-weight:600}}
 section.notes{{margin-top:22px;font-size:12.5px;color:var(--text-secondary)}}
 section.notes li{{margin:3px 0}}
 footer{{margin-top:22px;color:var(--text-muted);font-size:11.5px}}
+nav{{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}}
+nav a{{color:var(--accent)}}
+details{{margin:14px 0;padding:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px}}
+summary{{cursor:pointer;font-weight:600}}
+pre.report{{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.7 system-ui,sans-serif}}
 """
 
 
@@ -187,6 +192,7 @@ def render(
     charts: Sequence[dict] | None = None,
     notes: Sequence[str] | None = None,
     tables: Sequence[dict] | None = None,
+    reports: Sequence[dict] | None = None,
     generated_at: str = "",
     theme: str = "auto",
     title: str = "技术趋势预测 Dashboard",
@@ -201,6 +207,12 @@ def render(
     notes_html = "".join(f"<li>{_esc(n)}</li>" for n in notes) if notes else ""
     notes_block = f'<section class="notes"><h2 style="font-size:15px;margin:0 0 6px">口径说明</h2><ul>{notes_html}</ul></section>' if notes_html else ""
     footer = f'<footer>生成于 {_esc(generated_at)} · 阶段标签为启发式（非监督真值）</footer>' if generated_at else ""
+    report_html = "".join(
+        f'<details><summary>{_esc(r.get("title", ""))}</summary>'
+        f'<p class="sub">{_esc(r.get("source", ""))}</p>'
+        f'<pre class="report">{_esc(r.get("body", ""))}</pre></details>'
+        for r in (reports or [])
+    )
     return f"""<!doctype html>
 <html lang="zh-CN"{html_attr}>
 <head>
@@ -218,9 +230,11 @@ def render(
     </div>
     <button id="theme-toggle" onclick="toggleTheme()">主题：{_esc(theme)}</button>
   </header>
-  <div class="hero">{_hero_tiles(heroes)}</div>
-  <div class="grid">{_chart_cards(charts)}</div>
-  {_tables(tables)}
+  <nav><a href="#metrics">指标</a><a href="#charts">图表</a><a href="#tables">榜单与协同</a><a href="#reports">报告与计划</a></nav>
+  <div id="metrics" class="hero">{_hero_tiles(heroes)}</div>
+  <div id="charts" class="grid">{_chart_cards(charts)}</div>
+  <section id="tables">{_tables(tables)}</section>
+  <section id="reports"><h2>报告与计划</h2>{report_html}</section>
   {notes_block}
   {footer}
 </div>

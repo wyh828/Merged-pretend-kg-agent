@@ -19,6 +19,7 @@ import logging
 from pathlib import Path
 
 from techtrend.stages.base import Stage
+from techtrend.config import PROJECT_ROOT
 
 log = logging.getLogger(__name__)
 
@@ -178,6 +179,28 @@ class VisualizeStage(Stage):
             heroes = self._build_heroes(eval_m, cite_m) + heroes
             notes = self._build_notes(eval_m, cite_m)
 
+            weekly: dict = {}
+            if s.weekly_enable:
+                weekly = build_weekly_report(s)
+            reports = self._read_reports(out_dir, Path(s.weekly_report_file))
+            tables = []
+            if not fusion_df.empty:
+                columns = list(fusion_df.columns)
+                tables.append({"title": "融合榜单（已保存产物）", "columns": columns,
+                               "rows": fusion_df.head(s.viz_top_k).fillna("—").values.tolist()})
+            for filename, title in (("collab_consensus.json", "协同共识"), ("collab_conflicts.json", "协同冲突")):
+                path = out_dir / filename
+                if path.exists():
+                    rows = json.loads(path.read_text(encoding="utf-8"))
+                    if isinstance(rows, list) and rows:
+                        columns = list(dict.fromkeys(k for r in rows if isinstance(r, dict) for k in r))
+                        tables.append({"title": title, "columns": columns,
+                                       "rows": [[r.get(k, "—") for k in columns] for r in rows[:s.viz_top_k] if isinstance(r, dict)]})
+            if not charts:
+                notes.append("当前没有可绘图的数据产物；请先采集数据并运行预测与评估。这里不展示模拟实验数字。")
+            if not eval_m:
+                notes.append("缺少 eval_metrics.json：本地回测尚未完成，指标和模型比较均未验证。")
+
             # ---- 渲染 + 写盘 ----
             from datetime import datetime
 
@@ -185,16 +208,14 @@ class VisualizeStage(Stage):
                 heroes=heroes,
                 charts=charts,
                 notes=notes,
+                tables=tables,
+                reports=reports,
                 generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 theme=s.viz_theme,
             )
             dash_path.parent.mkdir(parents=True, exist_ok=True)
             dash_path.write_text(html, encoding="utf-8")
             self._write_chart_files(charts_dir, charts)
-
-            weekly: dict = {}
-            if s.weekly_enable:
-                weekly = build_weekly_report(s)
 
             log.info(
                 "visualize 完成：%s（%d 张图，hero %d 个，weekly=%s）",
@@ -205,6 +226,7 @@ class VisualizeStage(Stage):
                 "status": "ok",
                 "dashboard_file": str(dash_path),
                 "n_charts": len(charts),
+                "n_reports": len(reports),
                 "weekly": weekly,
             }
         except Exception as exc:  # noqa: BLE001
@@ -243,7 +265,7 @@ class VisualizeStage(Stage):
             {
                 "label": "② 时序链接预测 CyGNet MRR",
                 "value": _fmt(tkg),
-                "sub": f"RotatE 对照 {_fmt(rotate)}（{'优于' if (tkg or 0) > (rotate or 0) else '未优于'}）",
+                "sub": f"RotatE 对照 {_fmt(rotate)}（{'未验证' if tkg is None or rotate is None else ('优于' if tkg > rotate else '未优于')}）",
             },
             {
                 "label": "③ 指标时序回归 RMSE",
@@ -257,7 +279,7 @@ class VisualizeStage(Stage):
         edge = eval_m.get("tkg_edge_source_used") or eval_m.get("edge_source") or "—"
         notes = [
             f"TKG 边源：`{edge}`（共现投影为正式主边源；专利引用图经 P2-1 证伪，不作 TKG 边源）。",
-            "目标① 排名 / 目标② 链接 / 目标③ 回归均为 walk-forward 滚动原点回测（embargo + purge 防泄漏）。",
+            "回测产物来自 walk-forward 滚动原点；时间泄漏与评估口径仍需独立审查，不能仅凭阶段执行成功认定无泄漏。",
             "目标④ 阶段标签是启发式（非监督真值）：emerging=累积量低于分位/箱数不足，declining=近窗零增长。",
         ]
         if cite_m.get("sampling"):
@@ -272,8 +294,27 @@ class VisualizeStage(Stage):
             svg = c.get("svg") or ""
             if not svg:
                 continue
-            key = f"{i:02d}_{(c.get('title') or 'chart').split('（')[0]}".replace(" ", "_")
+            key = f"chart_{i:02d}"
             (charts_dir / f"{key}.svg").write_text(svg, encoding="utf-8")
+
+    @staticmethod
+    def _read_reports(out_dir: Path, weekly_path: Path) -> list[dict]:
+        """Read a fixed report allowlist; embed escaped Markdown source for offline review."""
+        reports = []
+        paths = [out_dir / name for name in ("report.md", "eval_report.md", "report_llm.md")]
+        paths.append(weekly_path)
+        paths.extend(PROJECT_ROOT / name for name in (
+            "COMPARISON_REPORT.md", "MERGE_PLAN.md", "REPORT_OUTLINE.md",
+        ))
+        for path in paths:
+            exists = path.exists()
+            reports.append({
+                "title": path.name,
+                "source": str(path),
+                "body": (path.read_text(encoding="utf-8") if exists else "尚未生成此报告。")
+                    + ("\n\n注意：项目计划和对比报告包含上游历史记录，未经本机重新验证。" if path.parent == PROJECT_ROOT else ""),
+            })
+        return reports
 
 
 __all__ = ["VisualizeStage"]

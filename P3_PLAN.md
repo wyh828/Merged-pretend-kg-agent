@@ -1,3 +1,5 @@
+> 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
+
 # P3 时序预测 —— 完整构建计划
 
 ## Context（为什么做这件事）
@@ -317,17 +319,17 @@ def mape(actual, pred) -> float                # 0 真值跳过，防除零
 #    预测层不直接读 Neo4j，只读 data/interim/{triples,nodes,works}.jsonl
 
 # 2. 装依赖（无新增；沿用 P0/P1 conda 环境 + 完整路径）
-E:\conda_envs\techtrend\python.exe -m pip install -r requirements.txt
+& 'F:\Predictive agents\.venv\Scripts\python.exe' -m pip install -r requirements.txt
 
 # 3. 只跑预测阶段（复用 P2 的 interim 产物）
-E:\conda_envs\techtrend\python.exe main.py --stage predict
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py --stage predict
 #   预期产出：
 #   - output/baseline_metrics.json  仍含 filtered MRR/Hits + precision@k（向后兼容）
 #   - output/temporal_metrics.json  含 tkg_* / forecast_* / fusion_*
 #   - output/tkg_rules.jsonl / forecast.csv / fusion_ranking.csv
 
 # 4. 全量串跑（六阶段，exit 0）
-E:\conda_envs\techtrend\python.exe main.py
+& 'F:\Predictive agents\.venv\Scripts\python.exe' main.py
 
 # 5. 报告
 type output\report.md

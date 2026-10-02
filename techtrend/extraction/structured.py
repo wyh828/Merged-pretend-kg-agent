@@ -39,6 +39,10 @@ def short_id(openalex_id: str | None) -> str | None:
     """https://openalex.org/W... → W..."""
     if not openalex_id:
         return None
+    if openalex_id.startswith(("doi:", "crossref:")):
+        return openalex_id
+    if openalex_id.startswith("10.") and "/" in openalex_id:
+        return "doi:" + openalex_id.lower()
     return openalex_id.rstrip("/").rsplit("/", 1)[-1]
 
 
@@ -126,6 +130,7 @@ def extract_triples(
 ) -> list[dict]:
     triples: list[dict] = []
     for w in works:
+        source = w.get("source") or "openalex"
         head = short_id(w.get("id"))
         if not head:
             continue
@@ -139,24 +144,24 @@ def extract_triples(
         for c in concepts:
             cid = short_id(c.get("id"))
             if cid:
-                triples.append(_triple(head, "Paper", "belongs_to", cid, "Concept", date, "openalex"))
+                triples.append(_triple(head, "Paper", "belongs_to", cid, "Concept", date, source))
 
         for a in w.get("authorships") or []:
             author = a.get("author") or {}
             aid = short_id(author.get("id"))
             if aid:
-                triples.append(_triple(head, "Paper", "authored_by", aid, "Author", date, "openalex"))
+                triples.append(_triple(head, "Paper", "authored_by", aid, "Author", date, source))
             for inst in a.get("institutions") or []:
                 iid = short_id(inst.get("id"))
                 if iid:
                     triples.append(
-                        _triple(head, "Paper", "affiliated_with", iid, "Institution", date, "openalex")
+                        _triple(head, "Paper", "affiliated_with", iid, "Institution", date, source)
                     )
 
         for ref in (w.get("referenced_works") or [])[:max_refs]:
             rid = short_id(ref)
             if rid:
-                triples.append(_triple(head, "Paper", "cites", rid, "Paper", date, "openalex"))
+                triples.append(_triple(head, "Paper", "cites", rid, "Paper", date, source))
 
     return triples
 
@@ -164,19 +169,20 @@ def extract_triples(
 def build_nodes(works: Iterable[dict], max_refs: int = 10) -> list[dict]:
     nb = _NodeBuilder()
     for w in works:
+        source = w.get("source") or "openalex"
         nb.add(
-            short_id(w.get("id")), "Paper", w.get("title"), source="openalex",
+            short_id(w.get("id")), "Paper", w.get("title"), source=source,
             pub_date=w.get("publication_date"), doi=w.get("doi"),
         )
         for c in w.get("concepts") or []:
-            nb.add(short_id(c.get("id")), "Concept", c.get("name"), source="openalex")
+            nb.add(short_id(c.get("id")), "Concept", c.get("name"), source=source)
         for a in w.get("authorships") or []:
             author = a.get("author") or {}
-            nb.add(short_id(author.get("id")), "Author", author.get("name"), source="openalex")
+            nb.add(short_id(author.get("id")), "Author", author.get("name"), source=source)
             for inst in a.get("institutions") or []:
-                nb.add(short_id(inst.get("id")), "Institution", inst.get("name"), source="openalex")
+                nb.add(short_id(inst.get("id")), "Institution", inst.get("name"), source=source)
         for ref in (w.get("referenced_works") or [])[:max_refs]:
-            nb.add(short_id(ref), "Paper", None, source="openalex")
+            nb.add(short_id(ref), "Paper", None, source=source)
     return nb.result()
 
 

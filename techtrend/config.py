@@ -1,16 +1,26 @@
 """集中配置：pydantic-settings 从 .env 读取，全部字段有默认值。
 
-保证无 .env、无任何 key 时 `python main.py` 也能干净跑通。
+无密钥时可加载配置和生成空状态看板；全量运行仍需要数据与外部服务。
 """
 from functools import lru_cache
+import os
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def resolve_project_path(value: str | Path) -> Path:
+    """Resolve a configured local path against the checkout, without creating it."""
+    path = Path(value).expanduser()
+    return path.resolve() if path.is_absolute() else (PROJECT_ROOT / path).resolve()
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -19,6 +29,7 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     output_dir: Path = Path("output")
     log_dir: Path = Path("logs")
+    cache_dir: Path = Path("data/cache")
     log_level: str = "INFO"
 
     # ---- 信号层（阶段0 合并引入：her 的「话题/源配置层」接入点，只读指针）----
@@ -228,8 +239,50 @@ class Settings(BaseSettings):
     weekly_window_days: int = 7              # 聚合最近 N 天 manifest
     weekly_report_file: str = "output/weekly_report.md"
 
+    @model_validator(mode="after")
+    def resolve_local_paths(self) -> "Settings":
+        """Anchor storage and config paths to this checkout, independent of CWD.
+
+        data/... and output/... follow DATA_DIR and OUTPUT_DIR overrides;
+        absolute paths are preserved. Bare report names belong to output_dir.
+        """
+        for name in ("data_dir", "output_dir", "log_dir"):
+            setattr(self, name, resolve_project_path(getattr(self, name)))
+        cache = Path(self.cache_dir).expanduser()
+        if not cache.is_absolute() and cache.parts and cache.parts[0] == "data":
+            cache = self.data_dir.joinpath(*cache.parts[1:])
+        self.cache_dir = resolve_project_path(cache)
+        for name in (
+            "signal_topics_path", "signal_sources_path", "uspto_raw_dir",
+            "patent_citations_file", "run_manifest_file", "viz_dashboard_file",
+            "viz_charts_dir", "weekly_report_file",
+        ):
+            path = Path(getattr(self, name)).expanduser()
+            if not path.is_absolute():
+                if path.parts and path.parts[0] == "data":
+                    path = self.data_dir.joinpath(*path.parts[1:])
+                elif path.parts and path.parts[0] == "output":
+                    path = self.output_dir.joinpath(*path.parts[1:])
+                elif name in ("run_manifest_file", "viz_dashboard_file", "viz_charts_dir", "weekly_report_file") and path.parent == Path("."):
+                    path = self.output_dir / path
+                else:
+                    path = resolve_project_path(path)
+            setattr(self, name, str(path.resolve()))
+        return self
+
 
 @lru_cache
 def get_settings() -> Settings:
     """返回缓存的 Settings 单例。"""
     return Settings()
+
+
+def configure_model_storage() -> None:
+    """Set dependency cache defaults before importing PyKEEN; respect explicit overrides."""
+    cache = get_settings().cache_dir
+    for key, subdir in (
+        ("PYSTOW_HOME", "pystow"), ("PYKEEN_HOME", "pykeen"),
+        ("TORCH_HOME", "torch"), ("HF_HOME", "huggingface"),
+    ):
+        value = os.environ.get(key)
+        os.environ[key] = str(resolve_project_path(value) if value else cache / subdir)

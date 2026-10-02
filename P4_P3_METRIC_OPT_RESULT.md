@@ -1,8 +1,10 @@
+> 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
+
 # P4/P3 指标优化 —— 结果报告（专利前向引用图路线）
 
 > 承接 [P4_P3_METRIC_OPT_PLAN.md](P4_P3_METRIC_OPT_PLAN.md)。记录 P0-1（专利前向引用数据）、
 > P1-2（引用时序回归 + S 曲线）、P2-1（引用图接 TKG 边源）三项的实际交付与评测结论。
-> 运行环境：`E:\conda_envs\techtrend\python.exe`。
+> 运行环境：`F:\Predictive agents\.venv\Scripts\python.exe`。
 
 ---
 

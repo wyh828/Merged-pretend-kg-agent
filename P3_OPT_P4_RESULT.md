@@ -1,7 +1,9 @@
+> 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
+
 # P3 优化 + P4 验证体系 —— 结果报告
 
 > 承接 [P3_OPT_P4_PLAN.md](P3_OPT_P4_PLAN.md)。本文记录 Part A（P3 优化）与 Part B（P4 验证体系）的
-> 交付物、验收核对与诚实结论。运行环境：`E:\conda_envs\techtrend\python.exe`。
+> 交付物、验收核对与诚实结论。运行环境：`F:\Predictive agents\.venv\Scripts\python.exe`。
 
 ---
 

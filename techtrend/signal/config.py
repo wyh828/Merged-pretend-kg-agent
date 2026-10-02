@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from techtrend.config import resolve_project_path
 
 
 SIGNAL_CONFIG_DIR = Path(__file__).resolve().parent / "configs"
@@ -98,8 +99,8 @@ def load_pipeline_config(
         project_name=raw.get("project_name", "predictive-agents"),
         timezone=raw.get("timezone", "Asia/Shanghai"),
         random_seed=raw.get("random_seed", 42),
-        data_root=Path(raw.get("data_root", "data/signal")),
-        resources_root=Path(raw.get("resources_root", "resources")),
+        data_root=resolve_project_path(raw.get("data_root", "data/signal")),
+        resources_root=resolve_project_path(raw.get("resources_root", "resources")),
         dataset_name=raw.get("dataset_name", "technology_cultivation_00"),
         start_date=raw.get("start_date", "2023-01"),
         end_date=raw.get("end_date", "2025-07"),

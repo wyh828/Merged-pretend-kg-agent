@@ -46,12 +46,12 @@ def run_full(args, settings) -> int:
             log.error("未知阶段：%s（可用 --list 查看）", args.stage)
             return 1
         log.info("单阶段运行：%s", stage.name)
-        stage.run()
-        return 0
+        result = stage.run()
+        return 1 if result.get("status") == "error" else 0
 
     pipeline = Pipeline(settings)
-    pipeline.run()
-    return 0
+    results = pipeline.run()
+    return 1 if any(r.get("status") == "error" for r in results) else 0
 
 
 if __name__ == "__main__":

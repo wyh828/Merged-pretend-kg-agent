@@ -4,7 +4,7 @@ This module is a thin, additive wrapper around the Huawei Cloud OBS Python
 SDK (``esdk-obs-python``). It does NOT change how :mod:`config.PipelineConfig`
 resolves local paths -- local files under ``Data/`` remain the source of
 truth. Cloud sync is opt-in and controlled by
-``Attempt/configs/cloud_storage.yaml`` (``huawei_obs.enabled``).
+``techtrend/signal/configs/cloud_storage.yaml`` (``huawei_obs.enabled``).
 
 Credentials (``HUAWEICLOUD_AK`` / ``HUAWEICLOUD_SK``) are read from ``.env``
 and are never read from or written to any config file.
@@ -18,6 +18,7 @@ from typing import Any
 
 import yaml
 from dotenv import load_dotenv
+from techtrend.config import PROJECT_ROOT
 
 from techtrend.signal.config import SIGNAL_CONFIG_DIR, PipelineConfig
 
@@ -25,7 +26,7 @@ DEFAULT_CLOUD_CONFIG_PATH = SIGNAL_CONFIG_DIR / "cloud_storage.yaml"
 
 
 def _load_env() -> None:
-    env_path = Path(__file__).resolve().parents[2] / ".env"
+    env_path = PROJECT_ROOT / ".env"
     if env_path.exists():
         load_dotenv(env_path)
 

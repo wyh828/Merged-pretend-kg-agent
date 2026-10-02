@@ -1,8 +1,8 @@
 """降级调度入口（Plan B）：hermes-agent 不可用时的 APScheduler 常驻调度。
 
 用法：
-    E:\\conda_envs\\techtrend\\python.exe -m techtrend.orchestration.scheduler --once   # 单次触发测试
-    E:\\conda_envs\\techtrend\\python.exe -m techtrend.orchestration.scheduler          # 常驻（需 SCHEDULE_ENABLE=true）
+    F:\\Predictive agents\\.venv\\Scripts\\python.exe -m techtrend.orchestration.scheduler --once   # 单次触发测试
+    F:\\Predictive agents\\.venv\\Scripts\\python.exe -m techtrend.orchestration.scheduler          # 常驻（需 SCHEDULE_ENABLE=true）
 
 用 subprocess 而非 import 跑 cron.py：与 hermes-agent cron 触发方式完全同构
 （都是「外部进程触发同一入口」），保证两条路径行为逐字节一致。
@@ -15,7 +15,7 @@ import logging
 import subprocess
 import sys
 
-from techtrend.config import get_settings
+from techtrend.config import PROJECT_ROOT, get_settings
 from techtrend.logging_config import setup_logging
 
 log = logging.getLogger(__name__)
@@ -34,9 +34,9 @@ def build_scheduler(settings):
     trigger = CronTrigger.from_crontab(settings.schedule_cron, timezone=settings.schedule_timezone)
 
     def _job() -> None:
-        cmd = [sys.executable, "cron.py", "--mode", "daily", "--notify"]
+        cmd = [sys.executable, str(PROJECT_ROOT / "cron.py"), "--mode", "daily", "--notify"]
         log.info("APScheduler 触发：%s", " ".join(cmd))
-        proc = subprocess.run(cmd)
+        proc = subprocess.run(cmd, cwd=PROJECT_ROOT)
         log.info("cron.py 退出码 %d", proc.returncode)
 
     scheduler.add_job(_job, trigger, id="techtrend_daily", replace_existing=True)
@@ -45,9 +45,9 @@ def build_scheduler(settings):
 
 def _fire_once(python: str | None) -> int:
     exe = python or sys.executable
-    cmd = [exe, "cron.py", "--mode", "daily", "--notify"]
+    cmd = [exe, str(PROJECT_ROOT / "cron.py"), "--mode", "daily", "--notify"]
     log.info("单次触发：%s", " ".join(cmd))
-    proc = subprocess.run(cmd)
+    proc = subprocess.run(cmd, cwd=PROJECT_ROOT)
     return proc.returncode
 
 

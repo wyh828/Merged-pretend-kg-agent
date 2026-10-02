@@ -36,7 +36,12 @@ _MATCH_TARGET = {
 def _norm_doi(doi: str | None) -> str | None:
     if not doi:
         return None
-    return doi.strip().lower().rstrip(".")
+    value = doi.strip().lower()
+    for prefix in ("https://doi.org/", "http://doi.org/", "https://dx.doi.org/", "http://dx.doi.org/", "doi:"):
+        if value.startswith(prefix):
+            value = value[len(prefix):]
+            break
+    return value
 
 
 def _fuzzy_match(name: str, candidates: dict[str, dict], threshold: float) -> dict | None:
@@ -77,7 +82,7 @@ def align_entities(
                 doi_index.setdefault(key, n["entity_id"])
     merged_by_doi = 0
     for n in nodes:
-        if n.get("type") == "Paper" and n.get("source") == "arxiv" and n.get("doi"):
+        if n.get("type") == "Paper" and n.get("source") in ("arxiv", "crossref") and n.get("doi"):
             key = _norm_doi(n["doi"])
             if key in doi_index and n.get("entity_id") != doi_index[key]:
                 n["entity_id"] = doi_index[key]
