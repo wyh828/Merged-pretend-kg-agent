@@ -5,6 +5,7 @@
 - 按 id 去重保证幂等（续跑不重复）；raw 快照写 `data/raw/<source>/<date>/`。
 """
 import logging
+import json
 import re
 import shutil
 from datetime import datetime
@@ -21,7 +22,7 @@ from techtrend.sources.openalex import OpenAlexClient
 from techtrend.sources.rsshub import RssHubClient
 from techtrend.sources.uspto import UsptoClient, file_date
 from techtrend.stages.base import Stage
-from techtrend.storage import write_snapshot_metadata, reserve_snapshot_path
+from techtrend.storage import write_snapshot_metadata, reserve_snapshot_path, write_api_snapshot
 
 log = logging.getLogger(__name__)
 
@@ -37,13 +38,15 @@ def _dedupe_by_id(records: list[dict]) -> list[dict]:
     return out
 
 
-def _append_dedup(interim_path: Path, records: list[dict]) -> int:
+def _append_dedup(interim_path: Path, records: list[dict], existing_ids: set | None = None) -> int:
     """与存量 interim 按 id 去重后追加，返回新增条数。"""
-    existing = {r.get("id") for r in read_jsonl(interim_path) if r.get("id")}
+    existing = existing_ids if existing_ids is not None else {r.get("id") for r in read_jsonl(interim_path) if r.get("id")}
     observed = datetime.now(timezone.utc).isoformat()
-    new = [{**r, "collected_at": observed, "dataset_version": interim_path.parent.parent.name}
-           for r in records if r.get("id") and r.get("id") not in existing]
+    new = [{**r, "collected_at": r.get("collected_at") or observed,
+            "dataset_version": interim_path.parent.parent.name}
+           for r in _dedupe_by_id(records) if r.get("id") and r.get("id") not in existing]
     append_jsonl(interim_path, new)
+    existing.update(r["id"] for r in new)
     return len(new)
 
 
@@ -143,42 +146,61 @@ class CollectStage(Stage):
 # 各源处理器（返回新增条数）
 # ---------------------------------------------------------------------------
 def _collect_openalex(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
-    from_date = _read_cursor(s, "openalex") or s.openalex_from_date
-    concept_ids = [c.strip() for c in s.openalex_concept_ids.split(",") if c.strip()]
-    client = OpenAlexClient(mailto=s.openalex_mailto, api_key=s.openalex_api_key, per_page=s.openalex_per_page)
-    try:
-        works = [client.normalize(w) for w in client.fetch_works(from_date, concept_ids, s.openalex_max_works)]
-    finally:
-        client.close()
-    works = _dedupe_by_id(works)
-    tag = re.sub(r"[^0-9A-Za-z-]", "_", from_date or "initial")
-    _write_raw(raw_dir, "openalex", _today(), tag, works, source_url="https://api.openalex.org/works",
-               query={"from_publication_date": from_date, "concept_ids": concept_ids, "max_works": s.openalex_max_works})
-    new = _append_dedup(interim_dir / "works.jsonl", works)
-    _write_cursor(s, "openalex", _today())
-    return new
+    with OpenAlexClient(mailto=s.openalex_mailto, api_key=s.openalex_api_key,
+                        per_page=s.openalex_per_page) as client:
+        return _collect_academic(s, interim_dir, raw_dir, "openalex", client,
+                                 s.openalex_max_works)
 
 
 def _collect_crossref(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
     """CrossRef（第 7 源）：DOI 锚点 + mailto polite pool。写入 works.jsonl（与 OpenAlex
     同文件，同属「学术 works」，下游 align 按 DOI 强锚点合并去重）。"""
-    from_date = _read_cursor(s, "crossref") or s.crossref_from_date
-    client = CrossrefClient(mailto=s.crossref_mailto, per_page=s.crossref_per_page)
-    try:
-        works = [
-            client.normalize(w)
-            for w in client.fetch_works(from_date, None, s.crossref_max_records)
-        ]
-    finally:
-        client.close()
-    works = [w for w in works if w.get("id")]
-    works = _dedupe_by_id(works)
-    tag = re.sub(r"[^0-9A-Za-z-]", "_", from_date or "initial")
-    _write_raw(raw_dir, "crossref", _today(), tag, works, source_url="https://api.crossref.org/works",
-               query={"from_publication_date": from_date, "max_records": s.crossref_max_records})
-    new = _append_dedup(interim_dir / "works.jsonl", works)
-    _write_cursor(s, "crossref", _today())
-    return new
+    with CrossrefClient(mailto=s.crossref_mailto, per_page=s.crossref_per_page) as client:
+        return _collect_academic(s, interim_dir, raw_dir, "crossref", client,
+                                 s.crossref_max_records)
+
+
+def _collect_academic(s: Settings, interim_dir: Path, raw_dir: Path, source: str,
+                      client, cap: int) -> int:
+    """Persist each page before checkpoint; capped windows never advance dates.
+
+    Progress is mutable operational state; API snapshots remain immutable.
+    A crash between append and checkpoint safely replays/deduplicates the page.
+    """
+    progress_path = s.data_dir / "metadata" / f"{source}_progress_02.json"
+    progress_path.parent.mkdir(parents=True, exist_ok=True)
+    spec = {"from_date": getattr(s, f"{source}_from_date") or s.collection_start_date,
+            "until_date": s.collection_end_date,
+            "concept_ids": s.openalex_concept_ids if source == "openalex" else "",
+            "field_ids": s.openalex_field_ids if source == "openalex" else ""}
+    state = json.loads(progress_path.read_text(encoding="utf-8")) if progress_path.exists() else {}
+    if state.get("spec") != spec:
+        state = {"spec": spec, "cursor": "*", "complete": False, "pages": 0}
+    if state.get("complete"):
+        return 0
+    new_count = 0
+    def persist_page(payload, query, next_cursor, complete):
+        nonlocal new_count
+        path = write_api_snapshot(raw_dir / source / _today(), f"{source}_page",
+                                  source=source, source_url=str(client.client.base_url) + "works",
+                                  query=query, payload=payload, dataset_version=s.data_dir.name)
+        raw_records = payload["results"] if source == "openalex" else payload["message"]["items"]
+        normalized = [client.normalize(record) for record in raw_records]
+        for record in normalized:
+            record["raw_snapshot"] = str(path.relative_to(s.data_dir))
+        new_count += _append_dedup(interim_dir / "works.jsonl", normalized)
+        state.update(cursor=next_cursor, complete=complete, pages=state["pages"] + 1,
+                     last_raw_snapshot=str(path.relative_to(s.data_dir)))
+        temporary = progress_path.with_suffix(".tmp")
+        temporary.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        temporary.replace(progress_path)
+    extra = {"field_ids": [x for x in s.openalex_field_ids.split(",") if x]} if source == "openalex" else {}
+    client.fetch_batch(spec["from_date"], [x for x in spec["concept_ids"].split(",") if x], cap,
+                       until_date=spec["until_date"], cursor=state["cursor"],
+                       on_page=persist_page, **extra)
+    if state["complete"]:
+        _write_cursor(s, source, spec["until_date"])
+    return new_count
 
 
 def _collect_arxiv(s: Settings, interim_dir: Path, raw_dir: Path) -> int:

@@ -26,7 +26,7 @@ and returns a list of activity records. Each record MUST carry:
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Protocol, runtime_checkable
 
 from techtrend.signal.config import PipelineConfig, generate_monthly_windows, month_range
@@ -107,13 +107,20 @@ class MonthCountCollector:
                 RuntimeError(f"non-JSON response: {response.payload['_non_json_body'][:120]}"),
             )
 
+        try:
+            count = self.parse_count(response)
+            if type(count) is not int or count < 0:
+                raise ValueError("activity count must be a nonnegative integer")
+        except (ValueError, TypeError, KeyError) as exc:
+            return self._failed_record(topic, w_start, w_end, exc)
+
         return {
             "source": self.source_name,
             "topic_id": topic.topic_id,
             "topic_label": topic.topic_label,
             "window_start": w_start,
             "window_end": w_end,
-            "activity_count": self.parse_count(response),
+            "activity_count": count,
             "collection_status": "ok",
             "collected_at": response.fetched_at,
             "cached": response.cache_hit,
@@ -148,7 +155,7 @@ class MonthCountCollector:
             "window_end": w_end,
             "activity_count": None,
             "collection_status": "failed",
-            "collected_at": datetime.utcnow().isoformat() + "Z",
+            "collected_at": datetime.now(timezone.utc).isoformat(),
             "cached": False,
             "error": str(exc),
         }

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from techtrend.config import resolve_project_path
+from techtrend.config import Settings, resolve_project_path
 
 
 SIGNAL_CONFIG_DIR = Path(__file__).resolve().parent / "configs"
@@ -87,12 +87,21 @@ def load_pipeline_config(
     config_path: Path | None = None,
     topics_path: Path | None = None,
 ) -> PipelineConfig:
+    shared_defaults = config_path is None
     if config_path is None:
         config_path = DEFAULT_CONFIG_PATH
     if topics_path is None:
         topics_path = SIGNAL_CONFIG_DIR / "topics.yaml"
 
     raw = load_yaml_config(config_path)
+    if shared_defaults:
+        settings = Settings()
+        end = datetime.strptime(settings.collection_end_date[:7], "%Y-%m")
+        next_end = f"{end.year + 1}-01" if end.month == 12 else f"{end.year}-{end.month + 1:02d}"
+        raw.update(data_root=str(settings.data_dir / "signal"), dataset_name=settings.data_dir.name,
+                   start_date=settings.collection_start_date[:7], end_date=next_end)
+        if topics_path == SIGNAL_CONFIG_DIR / "topics.yaml":
+            topics_path = Path(settings.signal_topics_path)
     split = raw.get("default_data_split", {})
 
     cfg = PipelineConfig(

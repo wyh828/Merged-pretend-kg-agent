@@ -8,6 +8,7 @@
 import logging
 import hashlib
 import json
+from collections import defaultdict
 from typing import Any, Iterable
 
 from neo4j import GraphDatabase
@@ -38,9 +39,12 @@ _DOC_LABELS = {"Paper", "Patent", "Repo", "News"}
 
 
 class Neo4jClient:
-    def __init__(self, uri: str, user: str, password: str, database: str = "neo4j") -> None:
+    def __init__(self, uri: str, user: str, password: str, database: str = "neo4j", batch_size: int = 500) -> None:
+        if batch_size < 1:
+            raise ValueError("batch_size must be positive")
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
         self.database = database
+        self.batch_size = batch_size
 
     def verify_connectivity(self) -> None:
         self.driver.verify_connectivity()
@@ -94,49 +98,36 @@ class Neo4jClient:
         triples = list(triples)
         nodes = list(nodes or [])
 
-        def do_write(tx) -> None:
-            for n in nodes:
-                props = self._node_props(n)
-                if props is None:
-                    continue
-                label = n.get("type")
-                tx.run(
-                    f"MERGE (x:{label} {{entity_id: $eid}}) SET x += $props",
-                    eid=n.get("entity_id"),
-                    props=props,
-                )
-            for t in triples:
-                rel = _RELATION_TYPES.get(t.get("relation"))
-                if rel is None:
-                    continue
-                hlabel = t.get("head_type")
-                tlabel = t.get("tail_type")
-                if hlabel not in _NODE_LABELS or tlabel not in _NODE_LABELS:
-                    continue
-                q = (
-                    f"MERGE (h:{hlabel} {{entity_id: $hid}}) "
-                    f"MERGE (t:{tlabel} {{entity_id: $tid}}) "
-                    f"MERGE (h)-[r:{rel} {{event_id: $event_id}}]->(t) "
-                    f"ON CREATE SET r.recorded_at = datetime() "
-                    f"SET r.time = $time, r.source = $source, r.dataset_version = $dataset_version "
-                    f"SET r.evidence_id = $evidence_id, r.collected_at = $collected_at "
-                    f"SET r.available_at = coalesce(r.available_at, $available_at)"
-                )
-                tx.run(
-                    q,
-                    hid=t.get("head_id") or t.get("head"),
-                    tid=t.get("tail_id") or t.get("tail"),
-                    time=t.get("time"),
-                    source=t.get("source"),
-                    event_id=self._event_id(t),
-                    dataset_version=t.get("dataset_version"),
-                    available_at=t.get("available_at"),
-                    evidence_id=t.get("evidence_id"),
-                    collected_at=t.get("collected_at"),
-                )
+        node_groups, edge_groups = defaultdict(list), defaultdict(list)
+        for n in nodes:
+            props = self._node_props(n)
+            if props is not None and n.get("entity_id"):
+                node_groups[n["type"]].append({"eid": n["entity_id"], "props": props})
+        for t in triples:
+            rel = _RELATION_TYPES.get(t.get("relation"))
+            hlabel, tlabel = t.get("head_type"), t.get("tail_type")
+            hid, tid = t.get("head_id") or t.get("head"), t.get("tail_id") or t.get("tail")
+            if not rel or hlabel not in _NODE_LABELS or tlabel not in _NODE_LABELS or not hid or not tid:
+                continue
+            edge_groups[hlabel, rel, tlabel].append({"hid": hid, "tid": tid, "event_id": self._event_id(t),
+                **{k: t.get(k) for k in ("time", "source", "dataset_version", "available_at", "evidence_id", "collected_at")}})
 
         with self.driver.session(database=self.database) as session:
-            session.execute_write(do_write)
+            # A failed chunk leaves earlier chunks committed. Replaying is
+            # idempotent by node/event IDs and never removes prior evidence.
+            for label, rows in node_groups.items():
+                query = f"UNWIND $rows AS row MERGE (x:{label} {{entity_id: row.eid}}) SET x += row.props"
+                self._write_batches(session, query, rows)
+            for (hlabel, rel, tlabel), rows in edge_groups.items():
+                query = ("UNWIND $rows AS row "
+                         f"MERGE (h:{hlabel} {{entity_id: row.hid}}) "
+                         f"MERGE (t:{tlabel} {{entity_id: row.tid}}) "
+                         f"MERGE (h)-[r:{rel} {{event_id: row.event_id}}]->(t) "
+                         "ON CREATE SET r.recorded_at = datetime() "
+                         "SET r.time = row.time, r.source = row.source, r.dataset_version = row.dataset_version "
+                         "SET r.evidence_id = row.evidence_id, r.collected_at = row.collected_at "
+                         "SET r.available_at = coalesce(r.available_at, row.available_at)")
+                self._write_batches(session, query, rows)
             node_count = session.run(
                 f"MATCH (n) WHERE {' OR '.join('n:' + l for l in _NODE_LABELS)} "
                 "RETURN count(n)"
@@ -147,6 +138,12 @@ class Neo4jClient:
             ).single()[0]
         log.info("Neo4j upsert 完成：nodes=%d, edges=%d", node_count, edge_count)
         return int(node_count), int(edge_count)
+
+    def _write_batches(self, session, query: str, rows: list[dict]) -> None:
+        """Consume each bounded transaction before advancing; errors propagate."""
+        for start in range(0, len(rows), self.batch_size):
+            batch = rows[start:start + self.batch_size]
+            session.execute_write(lambda tx: tx.run(query, rows=batch).consume())
 
     @staticmethod
     def _event_id(triple: dict) -> str:

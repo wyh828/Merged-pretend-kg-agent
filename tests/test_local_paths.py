@@ -13,7 +13,9 @@ def test_paths_are_independent_of_working_directory(tmp_path, monkeypatch):
     assert Path(settings.viz_dashboard_file) == settings.output_dir / "dashboard.html"
     assert Path(settings.signal_topics_path).is_file()
     signal = load_pipeline_config()
-    assert signal.data_root == (PROJECT_ROOT / "data/signal").resolve()
+    assert signal.data_root == Settings().data_dir / "signal"
+    assert signal.start_date == Settings().collection_start_date[:7]
+    assert signal.end_date == "2026-01"
     assert signal.resources_root == PROJECT_ROOT / "resources"
 
 

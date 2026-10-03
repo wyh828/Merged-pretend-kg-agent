@@ -1,0 +1,37 @@
+schema_version: data_preparation_02
+# Dates and storage come from Settings / local .env for both entry points.
+openalex:
+  base_url: https://api.openalex.org
+  group_by: primary_topic.field.id:include_unknown
+  samples_per_field_year: 20
+  seed: 42
+  corpus: core
+  access:
+    metadata_license: CC0
+    terms_url: https://help.openalex.org/access/pricing/
+    historical_snapshot: false
+crossref:
+  base_url: https://api.crossref.org
+  samples_per_month: 5
+  access:
+    metadata_license: public_domain_facts
+    abstract_license: publisher_or_author_may_retain_copyright
+    terms_url: https://www.crossref.org/documentation/retrieve-metadata/rest-api/
+    historical_snapshot: false
+http:
+  timeout_seconds: 40
+  min_interval_seconds: 1.0
+  max_requests_per_run: 600
+  stop_on_status: [401, 403, 429]
+scope:
+  fields: all
+  patent_citations: pending_accessible_bulk_files
+  current_year: excluded_partial_year
+quality:
+  require_day_precision_for_graph: true
+  minimum_month_coverage: 1.0
+  minimum_stratum_coverage: 1.0
+  minimum_classification_fraction: 0.95
+  minimum_nonempty_reference_fraction: 0.5
+  minimum_works_per_field_year: 100
+  allow_historical_as_of_evaluation: false

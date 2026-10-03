@@ -2,7 +2,7 @@
 
 多源数据驱动的技术趋势预测系统 —— 通过论文/专利/新闻/GitHub 多源数据构建动态知识图谱，多智能体协同预测技术趋势。
 
-> 当前本机版本基于 Merged-pretend-kg-agent 最新获取提交，包含十阶段流程。完整目标见 [PROJECT_PLAN.md](PROJECT_PLAN.md)；当前修订见 [leakage_revision_01.md](Attempt/docs/leakage_revision_01.md)，研究方向见 [research_direction_01.md](Attempt/docs/research_direction_01.md)。
+> 当前本机版本基于 Merged-pretend-kg-agent 获取提交，包含十阶段流程。完整目标见 [PROJECT_PLAN.md](PROJECT_PLAN.md)；最新数据准备见 [data_preparation_02.md](Attempt/docs/data_preparation_02.md)，时间泄漏修订见 [leakage_revision_01.md](Attempt/docs/leakage_revision_01.md)，研究方向见 [research_direction_01.md](Attempt/docs/research_direction_01.md)。
 
 ## 本机环境与运行（Windows PowerShell）
 
@@ -27,7 +27,34 @@ Neo4j 已配置为本机 Docker 实例（`bolt://127.0.0.1:7687`）；数据库�
 当前研究看板：`output/runs/research_01/dashboard.html`；分析文档也在该输出目录。旧 `output/dashboard.html` 保留为修订 00 的空状态产物。
 以下原仓库的阶段数字为历史记录，不能视为本机已复现的实验结果。
 
-## 本机修订 01（2026-10-03，优先时间泄漏）
+## 本机修订 02（2026-10-03，继续真实数据准备）
+
+按用户已确认的“宽领域、多年历史、免费资源、修好后重采”继续。当前分支 `codex/merged-local-00`，修改前检查点 `codex/checkpoint-before-data-prep-02` 保存 `88881d6`。保留现有架构和依赖；本轮没有迁入旧数据，没有付费 API/LLM、定时任务或通知。
+
+**已取得 2016–2025 年 26 学科的数据准备结果**：OpenAlex/Crossref 各覆盖 120 个月；260 个学科年份层；511 份原始响应（约 80.93 MiB）；5,375 条去重文献。425 条出版日期精度不足的 Crossref 记录单独保留。当前有效覆盖表 `Data/Datasets/technology_trends_01/processed/monthly_activity_01.csv`，审计摘要 `metadata/preparation_summary_01.json` 和 `metadata/data_validation_00.json`。原始响应、标准化快照、隔离记录和派生统计分开保存，逐份 SHA-256 与查询条件可追溯；成功响应离线重跑新增请求为 0。
+
+| 阶段 | 阻塞/问题 | 本轮成果与逐项验收 | 后续优化 |
+|---|---|---|---|
+| 配置/采集 | 主侧 AI/CS 限制、信号侧窗口/目录独立；上限结束却推进到今天造成漏采 | 默认范围不限学科、历史统一为 2016-01-01 至 2025-12-31；按剩余数量 cursor 分页，完整窗口才推进日期；断点与异常响应反例通过 | 旧六主题保留对照；其他源类别/查询适配和覆盖尚待验证 |
+| 数据整理 | 归一化结果冒充 raw；登记日期被当出版日期；错误响应被记零 | 保存 511 份原响应及独立元数据；425 条日期不精确记录隔离；主学科月度分组与源总量逐月相等；覆盖失败记空值 | 粗日期记录用于适当粒度，不能补造精确日期；扩大研究样本 |
+| 实测接口/版本 | unknown 也带 field URL，初次误算学科；摘要扩展名变更可能重复编号 | unknown 单列，当前 26 正式学科；初次 27 组摘要保留；新派生表 `_01`；缓存和版本反例通过 | 对分类索引修订记录新快照，复核抽样概率 |
+| 图谱/数据库 | 旧“批量入库”逐条发查询、单大事务 | UNWIND 分类型、每批默认 500；62,093 条抽取事件对齐后无丢失；真实 Neo4j 53,687 实体/62,093 事件；重复入库数量相同 | 参考节点多为占位，按任务补齐元数据；失败可幂等重放 |
+| 看板/文档 | 固定分层样本数易被误当热度 | 现有看板展示学科 API 月度总量、覆盖卡片、学科明细和完整审计；种子不生成概念生命周期趋势 | 加入后续真实回测，保持观察量与预测结果分开 |
+
+完整范围、函数修订、来源许可、命令和限制见 [data_preparation_02.md](Attempt/docs/data_preparation_02.md)。数据检查验证了全部原响应校验和、3,360 行月度覆盖、文献唯一 ID、原始来源路径和日期范围；不等于验证历史当时可得性。实体数包含作者、机构、主题和参考文献占位，不是已下载文献数。
+
+最终代码检查：**106 项测试通过**；85 模块导入成功；475 项函数声明登记于 `Attempt/docs/function_inventory_02.json`；pip check、compileall 和 Git 空白检查通过。真实图谱事件范围 2016-01-01 至 2025-12-31，可得性未知的属性保持缺失。Neo4j 只读检查提示 available_at 属性尚不存在，这是未填造历史可得性的预期状态，不是连接或导入失败；Git 行尾提示为 LF→CRLF 转换。
+
+```powershell
+& '.\.venv\Scripts\python.exe' Attempt/scripts/prepare_data_02.py
+& '.\.venv\Scripts\python.exe' Attempt/scripts/verify_data_02.py
+& '.\.venv\Scripts\python.exe' Attempt/scripts/prepare_graph_02.py --load-database
+& '.\.venv\Scripts\python.exe' main.py --stage visualize
+```
+
+**尚缺**：每学科每年当前 20 条随机种子，需要按正式任务扩大；专利时序引用尚未取得；回溯分类/引用是否当年可得仍未验证。当前数据摘要的正式历史评估/全规模预测就绪标志为 false，不把图谱入库成功当作预测有效。当前 API 统计是今天对过去的回溯观察；两个来源相互重叠，数量不能相加。下一步依次扩展任务数据、补专利覆盖、验证历史可得性，再开展真实回测和长期权重实验。
+
+## 本机修订 01（2026-10-03，优先时间泄漏，以下为当时状态）
 
 用户已确认：研究领域不设六主题上限，热度增长、新技术关联、专利引用增长都保留；用多年历史研究近期/远期权重及阶段迁移；先修代码、环境和数据库，再重采新数据。本轮未迁入旧研究数据、未启动研究数据 API、付费 LLM、调度或通知。
 

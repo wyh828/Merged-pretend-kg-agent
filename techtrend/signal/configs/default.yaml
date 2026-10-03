@@ -1,11 +1,9 @@
 project_name: predictive-agents
 timezone: Asia/Shanghai
 random_seed: 42
-data_root: data/signal
+# Default loading inherits DATA_DIR and COLLECTION_START/END_DATE from Settings.
+# Explicit historical config files can specify their own paths and windows.
 resources_root: resources
-dataset_name: technology_cultivation_00
-start_date: "2023-01"
-end_date: "2025-07"
 window_size_months: 1
 default_data_split:
   strategy: time_based

@@ -81,6 +81,10 @@ class VisualizeStage(Stage):
             # ---- 概念级（works.jsonl → monthly） ----
             works = read_jsonl(s.data_dir / "interim" / "works.jsonl")
             monthly = build_concept_monthly_counts(works, mode=s.burst_bin)
+            if any(w.get("sample_kind") for w in works):
+                import pandas as pd
+                monthly = pd.DataFrame()
+                notes.append("当前文献为分层图谱种子，样本数量不能代表学科热度；学科趋势使用独立 API 汇总量。")
             names = concept_names(works)
             exclude = {c.strip() for c in s.openalex_concept_ids.split(",") if c.strip()}
             if not monthly.empty:
@@ -178,13 +182,19 @@ class VisualizeStage(Stage):
             eval_m = _read_json(out_dir / "eval_metrics.json")
             cite_m = _read_json(out_dir / "citation_metrics.json")
             heroes = self._build_heroes(eval_m, cite_m) + heroes
-            notes = self._build_notes(eval_m, cite_m)
+            notes.extend(self._build_notes(eval_m, cite_m))
 
             weekly: dict = {}
             if s.weekly_enable:
                 weekly = build_weekly_report(s)
             reports = self._read_reports(out_dir, Path(s.weekly_report_file))
             tables = []
+            preparation = self._preparation_content(s)
+            heroes = preparation["heroes"] + heroes
+            charts = preparation["charts"] + charts
+            tables.extend(preparation["tables"])
+            reports.extend(preparation["reports"])
+            notes.extend(preparation["notes"])
             if not fusion_df.empty:
                 columns = list(fusion_df.columns)
                 tables.append({"title": "融合榜单（已保存产物）", "columns": columns,
@@ -235,6 +245,56 @@ class VisualizeStage(Stage):
             return {"stage": self.name, "status": "error", "error": str(exc)}
 
     # ------------------------------------------------------------------
+    @staticmethod
+    def _preparation_content(settings) -> dict:
+        """Read the latest versioned coverage audit; never recompute forecasts."""
+        import pandas as pd
+        from techtrend.io import read_jsonl
+        from techtrend.storage import file_digest
+        from techtrend.viz.svg import line_chart
+        content = {"heroes": [], "charts": [], "tables": [], "reports": [], "notes": []}
+        paths = sorted((settings.data_dir / "metadata").glob("preparation_summary_*.json"))
+        if not paths:
+            return content
+        path = paths[-1]
+        summary = _read_json(path)
+        if not summary or summary.get("dataset_version") != settings.data_dir.name:
+            content["notes"].append("数据准备摘要无法匹配当前数据目录。")
+            return content
+        counts_path = (settings.data_dir / summary["monthly_activity_file"]).resolve()
+        if not counts_path.is_relative_to(settings.data_dir) or not counts_path.is_file():
+            content["notes"].append("月度覆盖文件缺失或超出当前数据目录。")
+            return content
+        if file_digest(counts_path) != summary.get("derived_sha256", {}).get(counts_path.name):
+            content["notes"].append("月度覆盖文件校验和不匹配，暂停展示。")
+            return content
+        content["heroes"] = [
+            {"label": "数据覆盖学科", "value": summary["fields"], "sub": f"{summary['start_date']} 至 {summary['end_date']}"},
+            {"label": "OpenAlex 月度覆盖", "value": f"{summary['openalex_months_ok']} / {summary['expected_months']}", "sub": "含未分类记录，逐月核对汇总"},
+            {"label": "Crossref 月度覆盖", "value": f"{summary['crossref_months_ok']} / {summary['expected_months']}", "sub": "独立 DOI 文献口径"},
+            {"label": "图谱文献种子", "value": summary["works"], "sub": f"学科年份层 {summary['sampled_field_year_strata']} / {summary['expected_field_year_strata']}"},
+        ]
+        records = [r for r in read_jsonl(counts_path) if r["source"] == "openalex" and r["collection_status"] == "ok"]
+        frame = pd.DataFrame(records)
+        if not frame.empty:
+            pivot = frame.pivot(index="field_id", columns="month", values="activity_count").sort_index(axis=1)
+            names = frame.drop_duplicates("field_id").set_index("field_id")["field_name"].to_dict()
+            names = {key: ("未分类" if str(key).endswith("/unknown") or key == "unknown" else value)
+                     for key, value in names.items()}
+            top = pivot.sum(axis=1).sort_values(ascending=False).head(min(settings.viz_top_k, 6)).index
+            svg = line_chart([(names[f], pivot.loc[f].to_numpy(dtype=float).tolist()) for f in top],
+                             list(pivot.columns), title="学科月度文献量（API 汇总）", width=1000,
+                             roles=[f"series-{i + 1}" for i in range(len(top))])
+            content["charts"].append({"title": "学科月度文献量（API 汇总）", "svg": svg,
+                                      "note": "按主学科分类，每篇文献只计入一个学科；回溯统计，缺失月份不填零。"})
+            content["tables"].append({"title": "学科覆盖明细", "columns": ["学科", "已取得月份", "期间文献总量（当前回溯）"],
+                                       "rows": [[names[f], int(pivot.loc[f].notna().sum()), int(pivot.loc[f].sum())]
+                                                for f in pivot.index]})
+        content["reports"].append({"title": "数据准备与覆盖审计", "source": str(path),
+                                   "body": path.read_text(encoding="utf-8")})
+        content["notes"].append("当前 API 汇总和文献标签是今天的回溯快照；历史当时可得性未验证，正式预测回测尚未完成。OpenAlex 与 Crossref 有重叠，不可相加。")
+        return content
+
     @staticmethod
     def _resolve(output_dir: Path, target: str) -> Path:
         """把配置里的相对路径解析为 Path：裸文件名归 output_dir，其余按 CWD 相对。"""
@@ -310,7 +370,7 @@ class VisualizeStage(Stage):
             "COMPARISON_REPORT.md", "MERGE_PLAN.md", "REPORT_OUTLINE.md",
         ))
         paths.extend(PROJECT_ROOT / "Attempt" / "docs" / name for name in (
-            "leakage_revision_01.md", "research_direction_01.md",
+            "leakage_revision_01.md", "research_direction_01.md", "data_preparation_02.md",
         ))
         for path in paths:
             exists = path.exists()

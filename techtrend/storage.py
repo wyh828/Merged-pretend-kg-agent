@@ -1,17 +1,20 @@
 """Versioned local snapshots and provenance; never inspect credentials."""
 import hashlib
 import json
+import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
 
-def reserve_snapshot_path(directory: Path, stem: str) -> Path:
+def reserve_snapshot_path(directory: Path, stem: str, *, suffix: str = ".jsonl") -> Path:
     """Reserve a new numbered file exclusively; the caller fills this empty file."""
     directory.mkdir(parents=True, exist_ok=True)
-    index = 0
+    existing = [int(match.group(1)) for path in directory.glob(f"{stem}_*")
+                if (match := re.fullmatch(re.escape(stem) + r"_(\d+)(?:\..+)?", path.name))]
+    index = max(existing, default=-1) + 1
     while True:
-        path = directory / f"{stem}_{index:02d}.jsonl"
+        path = directory / f"{stem}_{index:02d}{suffix}"
         try:
             path.open("x", encoding="utf-8").close()
             return path
@@ -26,6 +29,34 @@ def file_digest(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def write_api_snapshot(directory: Path, stem: str, *, source: str,
+                       source_url: str, query: dict, payload: dict,
+                       dataset_version: str, access: dict | None = None) -> Path:
+    """Preserve the unnormalized API JSON and an immutable audit sidecar.
+
+    The response envelope contains the observed timestamp. Query secrets are
+    redacted defensively; callers send credentials through headers instead.
+    """
+    safe_query = {k: ("[REDACTED]" if k.lower() in {"api_key", "key", "token"} else v)
+                  for k, v in query.items()}
+    path = reserve_snapshot_path(directory, stem)
+    observed = datetime.now(timezone.utc).isoformat()
+    with path.open("w", encoding="utf-8") as stream:
+        json.dump({"collected_at": observed, "query": safe_query, "payload": payload},
+                  stream, ensure_ascii=False)
+        stream.write("\n")
+    metadata = {"schema_version": "api_snapshot_02", "source": source,
+                "source_url": source_url, "query": safe_query,
+                "collected_at": observed, "dataset_version": dataset_version,
+                "file": path.name, "sha256": file_digest(path),
+                "original_payload_preserved": True, "historical_available_at": None,
+                "access": access or {}, "processing": [],
+                "limitations": ["retrospective_metadata_not_historical_as_of"]}
+    with path.with_suffix(".metadata.json").open("x", encoding="utf-8") as stream:
+        json.dump(metadata, stream, ensure_ascii=False, indent=2)
+    return path
 
 
 def write_snapshot_metadata(path: Path, *, source: str, row_count: int,

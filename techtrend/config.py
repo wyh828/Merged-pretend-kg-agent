@@ -35,20 +35,25 @@ class Settings(BaseSettings):
     # ---- 信号层（阶段0 合并引入：her 的「话题/源配置层」接入点，只读指针）----
     signal_topics_path: str = "techtrend/signal/configs/topics.yaml"
     signal_sources_path: str = "techtrend/signal/configs/sources.yaml"
+    data_preparation_config: str = "Attempt/configs/data_preparation_02.yaml"
+    collection_start_date: str = "2016-01-01"
+    collection_end_date: str = "2025-12-31"
 
     # Neo4j（P1 起用）
     neo4j_uri: str = "bolt://localhost:7687"
     neo4j_user: str = "neo4j"
     neo4j_password: str = "neo4j"
     neo4j_database: str = "neo4j"
+    neo4j_write_batch_size: int = 500
 
     # OpenAlex 采集
-    openalex_mailto: str | None = None      # 进 polite pool（可选）
-    openalex_api_key: str | None = None     # premium key（可选，额度 10×）
-    openalex_from_date: str | None = None   # 增量起点，如 "2023-01-01"（首次无游标时的种子）
-    openalex_concept_ids: str = "C154945302,C41008148"  # 逗号分隔（AI/CS）
+    openalex_mailto: str | None = None      # 可选真实联系方式
+    openalex_api_key: str | None = None     # 免费 key 可提升免费日额度；可不填
+    openalex_from_date: str | None = None   # 显式窗口起点；默认继承 collection_start_date
+    openalex_concept_ids: str = ""  # 空值包含全部学科；旧概念过滤仅作显式对照
+    openalex_field_ids: str = ""    # 新版 primary_topic.field.id；空值不限学科
     openalex_max_works: int = 1000
-    openalex_per_page: int = 200
+    openalex_per_page: int = 100
 
     # CrossRef（阶段 3 合并，第 7 源；DOI 锚点 + mailto polite pool + 增量游标）
     crossref_mailto: str | None = None        # 进 polite pool（推荐填真实邮箱）
@@ -139,7 +144,7 @@ class Settings(BaseSettings):
     semantic_scholar_key: str | None = None
 
     # 多源采集开关（P2，逗号分隔；去掉某源即跳过）
-    collect_sources: str = "openalex,arxiv,uspto,gdelt,github,rsshub"
+    collect_sources: str = "openalex,crossref"
 
     # arXiv（OAI-PMH / Atom）
     arxiv_from_date: str | None = None
@@ -254,7 +259,7 @@ class Settings(BaseSettings):
             cache = self.data_dir.joinpath(*cache.parts[1:])
         self.cache_dir = resolve_project_path(cache)
         for name in (
-            "signal_topics_path", "signal_sources_path", "uspto_raw_dir",
+            "signal_topics_path", "signal_sources_path", "data_preparation_config", "uspto_raw_dir",
             "patent_citations_file", "run_manifest_file", "viz_dashboard_file",
             "viz_charts_dir", "weekly_report_file",
         ):
