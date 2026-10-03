@@ -2,7 +2,7 @@
 
 多源数据驱动的技术趋势预测系统 —— 通过论文/专利/新闻/GitHub 多源数据构建动态知识图谱，多智能体协同预测技术趋势。
 
-> 当前本机版本基于 Merged-pretend-kg-agent 最新获取提交，包含十阶段流程。完整目标见 [PROJECT_PLAN.md](PROJECT_PLAN.md)；本机检查范围见 [function_review_00.md](Attempt/docs/function_review_00.md)。
+> 当前本机版本基于 Merged-pretend-kg-agent 最新获取提交，包含十阶段流程。完整目标见 [PROJECT_PLAN.md](PROJECT_PLAN.md)；当前修订见 [leakage_revision_01.md](Attempt/docs/leakage_revision_01.md)，研究方向见 [research_direction_01.md](Attempt/docs/research_direction_01.md)。
 
 ## 本机环境与运行（Windows PowerShell）
 
@@ -13,7 +13,7 @@ Set-Location 'F:\Predictive agents'
 # 本次已建立 .venv；独立重建时使用本机可用的 Python：
 & 'D:\ide\Anaconda\python.exe' -m venv .venv
 & '.\.venv\Scripts\python.exe' -m pip install -r requirements.txt
-# .env 已创建，仅含路径和关闭的调度/推送开关；按 .env.example 填入服务配置。
+# .env 已配置本机数据路径与专用 Neo4j；其他 API 配置按 .env.example 填入。
 & '.\.venv\Scripts\python.exe' main.py --list
 & '.\.venv\Scripts\python.exe' main.py --stage visualize
 & '.\.venv\Scripts\python.exe' -m pytest tests -q --basetemp=output/test_tmp_00 -p no:cacheprovider
@@ -21,13 +21,52 @@ Set-Location 'F:\Predictive agents'
 
 本次验证环境为 Python 3.13.9，`.venv` 使用 `--system-site-packages` 复用本机 Anaconda 的已装包；
 环境快照见 `Attempt/docs/local_environment_00.txt`。独立重建命令不复用系统包，需重新安装全部依赖。
-Neo4j（`bolt://localhost:7687`）需要单独配置，数据库密码和 API key 写在根目录 `.env`。
+Neo4j 已配置为本机 Docker 实例（`bolt://127.0.0.1:7687`）；数据库密码和 API key 只保存在忽略的本地配置。
 默认不启动定时任务或对外推送。完整采集/训练需相应数据与外部服务。
 
-看板：`output/dashboard.html`；分析文档：`output/report.md` / `eval_report.md` / `weekly_report.md`。
+当前研究看板：`output/runs/research_01/dashboard.html`；分析文档也在该输出目录。旧 `output/dashboard.html` 保留为修订 00 的空状态产物。
 以下原仓库的阶段数字为历史记录，不能视为本机已复现的实验结果。
 
-## 本机修订 00（2026-10-03）
+## 本机修订 01（2026-10-03，优先时间泄漏）
+
+用户已确认：研究领域不设六主题上限，热度增长、新技术关联、专利引用增长都保留；用多年历史研究近期/远期权重及阶段迁移；先修代码、环境和数据库，再重采新数据。本轮未迁入旧研究数据、未启动研究数据 API、付费 LLM、调度或通知。
+
+继续在 `codex/merged-local-00`；修订前检查点 `codex/checkpoint-before-leak-fix-01` 保留 `c229928`。十阶段结构保持；新日历/存储工具使用已有依赖。当前配置 DATA_DIR 指向 `Data/Datasets/technology_trends_01`，OUTPUT_DIR 指向 `output/runs/research_01`，缓存跟随新数据目录；路径均在本工程。
+
+| 阶段 | 阻塞与问题 | 合并/修订成果 | 后续优化方法 |
+|---|---|---|---|
+| R1 回归/排名 | 全历史 Top-N、跨测试边界训练标签、近期均值含留出值；未来独有对象改变排名归一 | 候选/标签只用训练前缀；移除未来独有对象；反例改变未来数据而过去拟合保持不变 | 对多年月龄、冷启动和缺失覆盖分层评估 |
+| R2 时序图/融合 | 先在全图按支持度/度数筛选；链接/协同缓存和信号来自不同时间范围 | 每折拟合训练图筛选；测试允许已知实体新关系对；统一融合预测起点，缓存绑定输入/配置；未来日期过滤 | 验证历史字段可得性和逐折实体映射；新关系与重复关系分别统计 |
+| R3 指标/规则 | 并列 Spearman、常量伪相关、Top-1 Lift 分母和缺路权重不一致；TLogic 标签/方向/两跳时间错误 | 平均秩、常量返回未知、完整候选池均值、并列秩同分与缺路权重；规则评分匹配实际标签，两条体边均早于查询 | 在真实数据上重新跑新口径，不与上游旧数字混合 |
+| R4 引用/日历 | 缺月误缩时间；缺引用日期被回填旧发表日；按未来总被引采集/选样 | 连续日历；缺日期引用不进入时序；保留窗口全部引用，逐折过去选样；S 曲线全史描述单列 | 按年月分批、建立覆盖表；全量矩阵内存处理后续改分块 |
+| R5 存储/数据库 | 相同关系的历史事件丢失或被覆盖；新 Data 子目录沙箱写入被拒绝；无图数据库 | 事件 ID 包含时间/来源/版本/证据；后来文档修订不挂早期时间；新数据目录写权限通过；专用 Neo4j 建好并实际验证 | 当前 raw 普通 API 快照是归一化记录，需再补原 API 原文及来源可得性 |
+| R6 流程/报告 | 上游失败仍用旧产物；空折/缺引用文件被报告为成功；重复覆盖报告 | 失败停下游；空折返回未验证；缺数据更新可用性；运行前复制旧报告到编号 history；看板整合本轮方案和修订记录 | 统一领域注册表/查询适配，核对分页与游标，完成各源联调后采集 |
+
+Neo4j：独立容器 `predictive-agents-neo4j-01`，实际版本 5.26.31；持久卷 `Data/Database/neo4j_01`，日志 `logs/neo4j_01`。只映射本机 7474/7687；镜像锁定摘要；内存上限 2 GB/2 CPU；现有 opengauss 和 og_manager 未修改。密码只写入忽略的 `.env` / `Attempt/env/neo4j_auth.local`。数据库连接、建约束、双日期事件保留、重复写入幂等、测试数据清理均通过，研究节点目前为 0。重启电脑后可执行：
+
+```powershell
+docker desktop start
+docker compose --env-file .env -f Attempt/env/compose_01.yaml up -d neo4j
+& '.\.venv\Scripts\python.exe' Attempt/scripts/verify_database_01.py
+```
+
+逐项检查见 [leakage_revision_01.md](Attempt/docs/leakage_revision_01.md)，静态接口快照 [function_inventory_01.json](Attempt/docs/function_inventory_01.json)。本轮目标验收：全套 88 项测试；83 模块导入无错误；460 项函数声明已登记；pip check / compileall / Git 空白检查。函数登记和导入不代表所有业务已验证。
+
+离线流程使用 2020-01 至 2024-12 的 60 个月、240 条合成记录；抽取→对齐→回测→协同→报告→看板通过；实际训练 CyGNet 和 RotatE，活动量和排名也各完成一折。该结果只验证执行与接口，不能说明真实预测效果。验证产物在 `output/validation_01/causal_workflow_00`，与研究数据完全分开；其中没有专利真数据，专利目标明确缺失。验证脚本再次运行生成新编号目录。
+
+```powershell
+& '.\.venv\Scripts\python.exe' -m pytest tests -q --basetemp=output/test_tmp_01 -p no:cacheprovider
+& '.\.venv\Scripts\python.exe' -m pip check
+& '.\.venv\Scripts\python.exe' -m compileall -q techtrend main.py cron.py Attempt/scripts
+& '.\.venv\Scripts\python.exe' Attempt/scripts/verify_causality_01.py
+& '.\.venv\Scripts\python.exe' main.py --stage visualize
+```
+
+运行提示：CPU 无 CUDA、PyKEEN 使用保守 batch size、joblib 因本机缺 wmic 回退逻辑核心数；均没有导致合成流程失败。新数据目录曾缺少沙箱继承写权限，局部修复后实际写入探针通过；本地显式 CACHE_DIR 曾影响一个测试的默认路径假设，删除冗余覆盖后全套通过。Git 的 LF→CRLF 提示仅为本机行尾转换。
+
+**当前边界与后续顺序**：真实新数据全量预测还未完成。leak_ok 只检查非空折的事件时间边界；今天下载的历史记录是否含后来的引用/分类修订、历史实体对齐/LLM 后见知识仍未验证。先完善跨领域配置衔接、分页/增量游标和覆盖记录，核对真实来源接口及资源范围，再分批采集新数据并回测。多年自适应权重、阶段识别、递归类比迁移是下一研究实验，尚未接入主模型。研究方向已定，首批历史年数和付费 API 预算属于待确定的资源参数，未授权付费时使用免费数据和确定性方法。
+
+## 本机修订 00（2026-10-03，以下为当时状态）
 
 当前分支 `codex/merged-local-00`，上游提交 `1b87827418a5603b2df709a234d769171d655c94`。
 旧版本完整保存于 `.local_backups/pre_merged_import_00/`，旧提交保留于 `codex/checkpoint-before-merged-00`。

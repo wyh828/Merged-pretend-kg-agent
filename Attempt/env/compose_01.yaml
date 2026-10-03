@@ -1,0 +1,25 @@
+name: predictive-agents-local-01
+services:
+  neo4j:
+    image: ${NEO4J_IMAGE:-neo4j:5.26-community}
+    container_name: predictive-agents-neo4j-01
+    restart: "no"
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    environment:
+      NEO4J_AUTH_FILE: /run/secrets/neo4j_auth
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 512m
+      NEO4J_dbms_usage__report_enabled: "false"
+    secrets:
+      - neo4j_auth
+    volumes:
+      - "${PROJECT_STORAGE_ROOT}/Data/Database/neo4j_01:/data"
+      - "${PROJECT_STORAGE_ROOT}/logs/neo4j_01:/logs"
+    mem_limit: 2g
+    cpus: 2
+secrets:
+  neo4j_auth:
+    file: "${PROJECT_STORAGE_ROOT}/Attempt/env/neo4j_auth.local"

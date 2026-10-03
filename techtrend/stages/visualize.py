@@ -119,8 +119,9 @@ class VisualizeStage(Stage):
                 heroes.append(self._s_curve_hero("概念级", cdist))
 
             # ---- 专利级（evaluate 持久化产物，零重算） ----
-            pstages = _read_csv(out_dir / "s_curve_stages.csv")
-            if not pstages.empty and "stage" in pstages.columns:
+            citation_available = _read_json(out_dir / "citation_metrics.json").get("n_patents", 0) > 0
+            pstages = _read_csv(out_dir / "s_curve_stages.csv") if citation_available else None
+            if pstages is not None and not pstages.empty and "stage" in pstages.columns:
                 pdist = pstages["stage"].value_counts().to_dict()
                 pd_svg = C.stage_dist_svg(pdist)
                 if pd_svg:
@@ -130,14 +131,14 @@ class VisualizeStage(Stage):
                         "note": "专利级（前向引用累积，分层选样）",
                     })
                 heroes.append(self._s_curve_hero("专利级", pdist))
-            pcurves = _read_csv(out_dir / "s_curve_curves.csv", index_col=0)
-            if not pcurves.empty:
+            pcurves = _read_csv(out_dir / "s_curve_curves.csv", index_col=0) if citation_available else None
+            if pcurves is not None and not pcurves.empty:
                 po_svg = C.s_curve_overlay_svg(pcurves)
                 if po_svg:
                     charts.append({
                         "title": "专利 S 曲线各阶段归一化累积曲线（目标④）",
                         "svg": po_svg,
-                        "note": "专利前向引用（P0-1，2015→2024），分层选样",
+                        "note": "专利前向引用累积；阶段分组为描述性结果",
                     })
 
             # ---- 融合榜单（目标①） ----
@@ -260,7 +261,7 @@ class VisualizeStage(Stage):
             {
                 "label": "① 新兴技术识别 precision@k",
                 "value": _fmt(eval_m.get("p_at_k_mean")),
-                "sub": "walk-forward 回测（融合 vs Kleinberg）",
+                "sub": "walk-forward 回测（相对份额动量；Kleinberg 为消融对照）",
             },
             {
                 "label": "② 时序链接预测 CyGNet MRR",
@@ -282,10 +283,12 @@ class VisualizeStage(Stage):
             "回测产物来自 walk-forward 滚动原点；时间泄漏与评估口径仍需独立审查，不能仅凭阶段执行成功认定无泄漏。",
             "目标④ 阶段标签是启发式（非监督真值）：emerging=累积量低于分位/箱数不足，declining=近窗零增长。",
         ]
-        if cite_m.get("sampling"):
+        if cite_m.get("lifecycle_sampling"):
             notes.append(
-                f"专利 S 曲线选样：`{cite_m.get('sampling')}`（log10 分层，修正 top-N 只出 mature/declining 的偏）。"
+                f"专利 S 曲线描述性选样：`{cite_m.get('lifecycle_sampling')}`；引用回测候选仅由每折过去信息选择。"
             )
+        if eval_m.get("protocol_version"):
+            notes.append(f"评估协议：{eval_m['protocol_version']}。历史字段修订与当时可得性未验证；完整日历缺月表示零条已记录事件，不代表真实活动为零。")
         return notes
 
     @staticmethod
@@ -305,6 +308,9 @@ class VisualizeStage(Stage):
         paths.append(weekly_path)
         paths.extend(PROJECT_ROOT / name for name in (
             "COMPARISON_REPORT.md", "MERGE_PLAN.md", "REPORT_OUTLINE.md",
+        ))
+        paths.extend(PROJECT_ROOT / "Attempt" / "docs" / name for name in (
+            "leakage_revision_01.md", "research_direction_01.md",
         ))
         for path in paths:
             exists = path.exists()

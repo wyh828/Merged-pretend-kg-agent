@@ -69,7 +69,8 @@ def project_t2t(
         if not tail_id:
             continue
         head_id = t.get("head_id") or t.get("head")
-        d = doc_concepts[head_id]
+        # A later dated document revision must not be attached to an earlier event.
+        d = doc_concepts[(head_id, time, t.get("source"), t.get("dataset_version"))]
         d["concepts"].add(tail_id)
         if not d["time"]:
             d["time"] = time
@@ -93,7 +94,7 @@ def project_t2t(
         degree[a] += 1
         degree[b] += 1
     kept_entities: set[str] = set()
-    if len(degree) <= max_entities:
+    if max_entities <= 0 or len(degree) <= max_entities:
         kept_entities = set(degree)
     else:
         top = sorted(degree.items(), key=lambda kv: (-kv[1], kv[0]))[:max_entities]
@@ -120,6 +121,34 @@ def project_t2t(
         len(kept_pairs), min_cooccur, len(facts), len(kept_entities),
     )
     return facts
+
+
+def fit_graph_scope(train: list[dict], *, min_support: int = 1, max_entities: int = 0) -> dict:
+    """Fit support and entity limits on past facts only; never inspect held-out facts.
+
+    Pair support controls training noise. Test facts use only the fitted entity
+    and relation vocabulary, so previously unseen links remain valid targets.
+    """
+    counts = Counter((f["head"], f["relation"], f["tail"]) for f in train)
+    edges = {edge for edge, count in counts.items() if count >= min_support}
+    degree = Counter()
+    for head, relation, tail in sorted(edges):
+        degree[head] += 1
+        degree[tail] += 1
+    ordered = sorted(degree, key=lambda entity: (-degree[entity], entity))
+    entities = set(ordered[:max_entities] if max_entities > 0 else ordered)
+    edges = {edge for edge in edges if edge[0] in entities and edge[2] in entities}
+    entities = {e for h, _, t in edges for e in (h, t)}
+    return {"entities": entities, "relations": {r for _, r, _ in edges}, "edges": edges,
+            "fit_end": max((f["time"] for f in train), default=None)}
+
+
+def apply_graph_scope(facts: list[dict], scope: dict, *, training: bool = False) -> list[dict]:
+    """Apply frozen training selection; new known-entity links are kept in test."""
+    return [f for f in facts
+            if f["head"] in scope["entities"] and f["tail"] in scope["entities"]
+            and f["relation"] in scope["relations"]
+            and (not training or (f["head"], f["relation"], f["tail"]) in scope["edges"])]
 
 
 def load_directed_edges(

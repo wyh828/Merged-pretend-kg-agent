@@ -65,7 +65,7 @@ def mape(actual, pred) -> float:
 # 排序类指标（阶段 2 合并，来自 pretend-agent scoring.py 的 calculate_spearman_rho /
 # calculate_ndcg_at_k 与 evaluate_ranking 的 top1_lift 公式）
 # ---------------------------------------------------------------------------
-def spearman_rho(pred_scores: dict, true_scores: dict) -> float:
+def spearman_rho(pred_scores: dict, true_scores: dict) -> float | None:
     """Spearman 秩相关：预测分排序 vs 真值排序的单调相关性，[-1,1]。
 
     pred_scores / true_scores 均为 {id: 数值}（值越大越靠前）。
@@ -73,15 +73,25 @@ def spearman_rho(pred_scores: dict, true_scores: dict) -> float:
     common = [t for t in pred_scores if t in true_scores]
     n = len(common)
     if n < 2:
-        return 0.0
+        return None
 
-    sorted_pred = sorted(common, key=lambda t: pred_scores[t], reverse=True)
-    pred_ranks = {t: r for r, t in enumerate(sorted_pred, start=1)}
-    sorted_true = sorted(common, key=lambda t: true_scores[t], reverse=True)
-    true_ranks = {t: r for r, t in enumerate(sorted_true, start=1)}
-
-    d_sq = sum((pred_ranks[t] - true_ranks[t]) ** 2 for t in common)
-    return 1.0 - (6.0 * d_sq) / (n * (n**2 - 1))
+    def ranks(scores):
+        ordered = sorted(common, key=lambda t: scores[t])
+        result = {}
+        i = 0
+        while i < n:
+            end = i + 1
+            while end < n and scores[ordered[end]] == scores[ordered[i]]:
+                end += 1
+            for t in ordered[i:end]:
+                result[t] = (i + end - 1) / 2
+            i = end
+        return result
+    x, y = ranks(pred_scores), ranks(true_scores)
+    mean = (n - 1) / 2
+    numerator = sum((x[t] - mean) * (y[t] - mean) for t in common)
+    variance = sum((x[t] - mean) ** 2 for t in common) * sum((y[t] - mean) ** 2 for t in common)
+    return numerator / math.sqrt(variance) if variance > 0 else None
 
 
 def ndcg_at_k(ranked: list, relevance: dict, k: int) -> float:
@@ -119,7 +129,7 @@ def top1_lift(ranked: list, relevance: dict) -> float | None:
     if not ranked or not relevance:
         return None
     top1 = relevance.get(ranked[0], 0.0)
-    mean = sum(relevance.get(r, 0.0) for r in ranked) / len(ranked)
+    mean = sum(relevance.values()) / len(relevance)
     if mean <= 0:
         return None
     return top1 / mean

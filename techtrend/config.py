@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     neo4j_uri: str = "bolt://localhost:7687"
     neo4j_user: str = "neo4j"
     neo4j_password: str = "neo4j"
+    neo4j_database: str = "neo4j"
 
     # OpenAlex 采集
     openalex_mailto: str | None = None      # 进 polite pool（可选）
@@ -97,7 +98,7 @@ class Settings(BaseSettings):
     patent_citation_source: str = "uspto_local"  # 引用数据来源：uspto_local(本地 XML 抽取) | patentsview(bulk 下载) | bigquery(解析导出 CSV)
     patent_citation_max_edges: int = 2000000     # 本地 XML 抽取后向引用对上限（控内存/耗时）
     patent_citation_min_time: str | None = None  # 前向引用时态下界（如 "2010-01-01"；None=不设下界，含全部年份）
-    patent_citation_max_patents: int = 5000      # 只保留被引次数 top-N 的奠基专利（控图规模 + 保留高重复结构）
+    patent_citation_max_patents: int = 0         # 0=不按未来总引用选样；正数旧口径会被采集阶段拒绝
     patent_citations_file: str = "data/interim/patent_citations.jsonl"  # 前向引用图产物（head=被引专利, relation=cited_by, tail=引用专利, time=引用日）
 
     # TLogic 规则层

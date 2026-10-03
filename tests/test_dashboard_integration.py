@@ -9,6 +9,18 @@ def test_reports_are_embedded_safely():
     assert '<script>bad()</script>' not in html
 
 
+def test_missing_current_patent_data_cannot_display_old_curves(tmp_path):
+    import json
+    import pandas as pd
+    out = tmp_path / "out"
+    out.mkdir()
+    pd.DataFrame([{"patent": "old", "stage": "growth"}]).to_csv(out / "s_curve_stages.csv", index=False)
+    pd.DataFrame([[1, 2]], index=["growth"], columns=["2000-01", "2000-02"]).to_csv(out / "s_curve_curves.csv")
+    (out / "citation_metrics.json").write_text(json.dumps({"status": "skipped", "n_patents": 0}))
+    result = VisualizeStage(Settings(_env_file=None, data_dir=tmp_path / "data", output_dir=out)).run()
+    assert result["status"] == "ok" and result["n_charts"] == 0
+
+
 def test_missing_metrics_never_produce_model_verdict():
     heroes = VisualizeStage._build_heroes({}, {})
     assert "未验证" in heroes[1]["sub"]

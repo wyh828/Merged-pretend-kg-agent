@@ -12,6 +12,7 @@ from techtrend.config import get_settings
 from techtrend.logging_config import setup_logging
 from techtrend.pipeline import Pipeline
 from techtrend.stages import get_default_stages
+from techtrend.storage import snapshot_outputs
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -46,6 +47,7 @@ def run_full(args, settings) -> int:
             log.error("未知阶段：%s（可用 --list 查看）", args.stage)
             return 1
         log.info("单阶段运行：%s", stage.name)
+        snapshot_outputs(settings.output_dir, f"stage:{stage.name}")
         result = stage.run()
         return 1 if result.get("status") == "error" else 0
 

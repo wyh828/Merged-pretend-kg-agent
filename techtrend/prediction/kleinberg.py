@@ -12,6 +12,7 @@ from typing import Iterable
 import pandas as pd
 
 from techtrend.extraction.structured import short_id
+from techtrend.prediction.calendar import calendar_bins
 
 log = logging.getLogger(__name__)
 
@@ -100,7 +101,11 @@ def build_concept_monthly_counts(works: Iterable[dict], mode: str = "month") -> 
         return pd.DataFrame()
     df = pd.DataFrame(records, columns=["concept", "bin"])
     counts = df.pivot_table(index="concept", columns="bin", aggfunc="size", fill_value=0)
-    return counts.reindex(sorted(counts.columns), axis=1)
+    bins = calendar_bins(list(counts.columns), mode)
+    result = counts.reindex(bins, axis=1, fill_value=0)
+    result.attrs["missing_record_bins"] = sorted(set(bins) - set(counts.columns))
+    result.attrs["coverage"] = "recorded_events_only; absence_is_not_verified_zero_activity"
+    return result
 
 
 def concept_names(works: Iterable[dict]) -> dict[str, str]:
@@ -123,6 +128,8 @@ def detect_top_bursts(
     """
     rows: list[tuple[str, float, int]] = []
     for cid in df.index:
+        if df.loc[cid].sum() <= 0:
+            continue
         series = df.loc[cid].to_numpy(dtype=float)
         bursts = kleinberg_bursts(series, s=s, gamma=gamma)
         weight = max((b["weight"] for b in bursts), default=0.0)

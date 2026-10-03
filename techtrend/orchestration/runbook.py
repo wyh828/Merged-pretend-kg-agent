@@ -23,6 +23,7 @@ from techtrend.config import Settings
 from techtrend.io import append_jsonl
 from techtrend.orchestration.roles import STAGE_ROLE
 from techtrend.stages import get_default_stages
+from techtrend.storage import snapshot_outputs
 
 log = logging.getLogger(__name__)
 
@@ -124,6 +125,7 @@ def _append_manifest(settings: Settings, manifest: dict) -> None:
 def run_daily(settings: Settings) -> dict:
     """执行一次每日运行，返回 run manifest dict。"""
     started = datetime.now()
+    snapshot_outputs(settings.output_dir, "daily_pipeline")
     run_id = _run_id()
     stage_pool = {s.name: s for s in get_default_stages(settings)}
     manifest_stages: dict[str, str] = {n: "pending" for n in ALL_STAGES}
@@ -134,36 +136,49 @@ def run_daily(settings: Settings) -> dict:
     results.append(collect_result)
     manifest_stages["collect"] = collect_result.get("status", "error")
     new_records = _new_records(collect_result)
+    failed = collect_result.get("status") == "error"
 
     # 2) 守卫：全源 0 新增 → 短路下游，直接 report+notify
     noop = _is_noop(collect_result.get("sources", {}), settings)
-    if noop:
+    if failed:
+        for st in _DOWNSTREAM:
+            manifest_stages[st] = "skipped"
+    elif noop:
         log.info("全源 0 新增 → 短路下游（%s），直接 report+notify", ",".join(_DOWNSTREAM))
         for st in _DOWNSTREAM:
             manifest_stages[st] = "skipped"
     else:
         # 3) extractor → extract + align + build_graph
         for st in ("extract", "align", "build_graph"):
+            if failed:
+                manifest_stages[st] = "skipped"
+                continue
             r = _run_stage(stage_pool, st, role_label=STAGE_ROLE.get(st, "extractor"))
             results.append(r)
             manifest_stages[st] = r.get("status", "error")
+            failed = r.get("status") == "error"
         # 4) analyst → predict　5) integrator → evaluate
         for st in ("predict", "evaluate", "collaborate"):
+            if failed:
+                manifest_stages[st] = "skipped"
+                continue
             r = _run_stage(stage_pool, st, role_label=STAGE_ROLE.get(st, "analyst"))
             results.append(r)
             manifest_stages[st] = r.get("status", "error")
+            failed = r.get("status") == "error"
 
     # 6) reviewer → HITL 审校卡点（report 前）
-    hitl_approved = _review_checkpoint(settings, run_id, results)
+    hitl_approved = not failed and _review_checkpoint(settings, run_id, results)
 
     # 7) reporter → report + notify + visualize
     for st in ("report", "notify", "visualize"):
-        if not hitl_approved:
+        if not hitl_approved or failed:
             manifest_stages[st] = "skipped"
             continue
         r = _run_stage(stage_pool, st, role_label="reporter")
         results.append(r)
         manifest_stages[st] = r.get("status", "error")
+        failed = r.get("status") == "error"
 
     finished = datetime.now()
     status = "ok" if hitl_approved and all(manifest_stages[s] in ("ok", "skipped") for s in ALL_STAGES) else "error"

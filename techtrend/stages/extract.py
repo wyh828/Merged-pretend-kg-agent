@@ -11,7 +11,7 @@ from datetime import datetime
 from techtrend.extraction.llm import LLMExtractor
 from techtrend.extraction.structured import (
     build_nodes,
-    dedupe_earliest,
+    dedupe_events,
     deterministic_entity_id,
     extract_arxiv,
     extract_github,
@@ -82,12 +82,23 @@ class ExtractStage(Stage):
                 directed_pairs = []
 
             # ---- 3. 去重 + 补 created_at ----
-            triples = dedupe_earliest(triples)
+            triples = dedupe_events(triples)
             # 定向 tech→tech 边在 dedupe 之后追加：跨文档重复是 min_support 计数，不能折叠。
             triples.extend(directed_pairs)
             now = datetime.now().isoformat(timespec="seconds")
+            documents = {}
+            for record in works + arxiv + patents + github + news:
+                if record.get("id"):
+                    documents[record["id"]] = record
+                    documents[short_id(record["id"])] = record
             for t in triples:
                 t["created_at"] = now
+                t["dataset_version"] = s.data_dir.name
+                document = documents.get(t.get("evidence_id") or t.get("head"))
+                if document:
+                    t["evidence_id"] = document["id"]
+                    t["collected_at"] = document.get("collected_at")
+                    t["available_at"] = document.get("available_at")
 
             write_jsonl(interim_dir / "triples.jsonl", triples)
             write_jsonl(interim_dir / "nodes.jsonl", list(nodes.values()))
@@ -223,6 +234,7 @@ class ExtractStage(Stage):
                         "tail_type": "Concept",
                         "time": w.get("publication_date"),
                         "source": "openalex",
+                        "evidence_id": w.get("id"),
                     }
                 )
             calls += 1

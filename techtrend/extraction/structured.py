@@ -302,3 +302,15 @@ def dedupe_earliest(triples: list[dict]) -> list[dict]:
         if prev is None or (t.get("time") or "") < (prev.get("time") or ""):
             best[key] = t
     return list(best.values())
+
+
+def dedupe_events(triples: list[dict]) -> list[dict]:
+    """Remove exact evidence duplicates while preserving dated/source/versioned events."""
+    seen = set()
+    result = []
+    for triple in triples:
+        key = tuple(triple.get(k) for k in ("head", "relation", "tail", "time", "source", "dataset_version", "evidence_id"))
+        if key not in seen:
+            seen.add(key)
+            result.append(triple)
+    return result

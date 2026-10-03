@@ -1,0 +1,7342 @@
+[
+  {
+    "file": "main.py",
+    "line": 18,
+    "name": "build_parser",
+    "arguments": "",
+    "returns": "argparse.ArgumentParser",
+    "purpose": "No docstring",
+    "calls": [
+      "argparse.ArgumentParser",
+      "parser.add_argument"
+    ]
+  },
+  {
+    "file": "main.py",
+    "line": 25,
+    "name": "run",
+    "arguments": "",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "build_parser",
+      "build_parser().parse_args",
+      "get_settings",
+      "run_full",
+      "setup_logging"
+    ]
+  },
+  {
+    "file": "main.py",
+    "line": 34,
+    "name": "run_full",
+    "arguments": "args, settings",
+    "returns": "int",
+    "purpose": "执行全量 pipeline（--list / --stage / 全跑）。供 main.py 与 cron.py --mode full 复用。",
+    "calls": [
+      "Pipeline",
+      "any",
+      "get_default_stages",
+      "log.error",
+      "log.info",
+      "logging.getLogger",
+      "next",
+      "pipeline.run",
+      "print",
+      "r.get",
+      "result.get",
+      "snapshot_outputs",
+      "stage.run"
+    ]
+  },
+  {
+    "file": "cron.py",
+    "line": 21,
+    "name": "build_parser",
+    "arguments": "",
+    "returns": "argparse.ArgumentParser",
+    "purpose": "No docstring",
+    "calls": [
+      "argparse.ArgumentParser",
+      "parser.add_argument"
+    ]
+  },
+  {
+    "file": "cron.py",
+    "line": 33,
+    "name": "_print_dry_run",
+    "arguments": "settings, mode: str",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "', '.join",
+      "','.join",
+      "extra.append",
+      "get_default_stages",
+      "list",
+      "print"
+    ]
+  },
+  {
+    "file": "cron.py",
+    "line": 58,
+    "name": "run",
+    "arguments": "",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "_print_dry_run",
+      "build_parser",
+      "build_parser().parse_args",
+      "build_weekly_report",
+      "get_default_stages",
+      "get_settings",
+      "log.error",
+      "log.info",
+      "logging.getLogger",
+      "manifest.get",
+      "print",
+      "report.get",
+      "run_daily",
+      "run_full",
+      "setup_logging"
+    ]
+  },
+  {
+    "file": "backfill_cited_by_count.py",
+    "line": 27,
+    "name": "_openalex_id",
+    "arguments": "wid: str",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "wid.rsplit"
+    ]
+  },
+  {
+    "file": "backfill_cited_by_count.py",
+    "line": 31,
+    "name": "main",
+    "arguments": "",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "'|'.join",
+      "Path",
+      "Settings",
+      "_openalex_id",
+      "ap.add_argument",
+      "ap.parse_args",
+      "argparse.ArgumentParser",
+      "client.get",
+      "counts.get",
+      "httpx.Client",
+      "len",
+      "print",
+      "r.json",
+      "r.json().get",
+      "r.raise_for_status",
+      "range",
+      "read_jsonl",
+      "row.get",
+      "str",
+      "sum",
+      "w.get",
+      "write_jsonl"
+    ]
+  },
+  {
+    "file": "techtrend/config.py",
+    "line": 15,
+    "name": "resolve_project_path",
+    "arguments": "value: str | Path",
+    "returns": "Path",
+    "purpose": "Resolve a configured local path against the checkout, without creating it.",
+    "calls": [
+      "(PROJECT_ROOT / path).resolve",
+      "Path",
+      "Path(value).expanduser",
+      "path.is_absolute",
+      "path.resolve"
+    ]
+  },
+  {
+    "file": "techtrend/config.py",
+    "line": 244,
+    "name": "Settings.resolve_local_paths",
+    "arguments": "self",
+    "returns": "'Settings'",
+    "purpose": "Anchor storage and config paths to this checkout, independent of CWD.",
+    "calls": [
+      "Path",
+      "Path(getattr(self, name)).expanduser",
+      "Path(self.cache_dir).expanduser",
+      "cache.is_absolute",
+      "getattr",
+      "model_validator",
+      "path.is_absolute",
+      "path.resolve",
+      "resolve_project_path",
+      "self.data_dir.joinpath",
+      "self.output_dir.joinpath",
+      "setattr",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/config.py",
+    "line": 276,
+    "name": "get_settings",
+    "arguments": "",
+    "returns": "Settings",
+    "purpose": "返回缓存的 Settings 单例。",
+    "calls": [
+      "Settings"
+    ]
+  },
+  {
+    "file": "techtrend/config.py",
+    "line": 281,
+    "name": "configure_model_storage",
+    "arguments": "",
+    "returns": "None",
+    "purpose": "Set dependency cache defaults before importing PyKEEN; respect explicit overrides.",
+    "calls": [
+      "get_settings",
+      "os.environ.get",
+      "resolve_project_path",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/llm.py",
+    "line": 46,
+    "name": "_should_retry",
+    "arguments": "exc: BaseException",
+    "returns": "bool",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/extraction/llm.py",
+    "line": 54,
+    "name": "_parse_json",
+    "arguments": "content: str",
+    "returns": "dict | None",
+    "purpose": "解析模型返回的 JSON（容忍 markdown 代码围栏）。",
+    "calls": [
+      "(content or '').strip",
+      "isinstance",
+      "json.loads",
+      "text.find",
+      "text.rfind",
+      "text.startswith",
+      "text.strip"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/llm.py",
+    "line": 77,
+    "name": "LLMExtractor.__init__",
+    "arguments": "self, api_key: str, base_url: str, model: str, max_tokens: int=2048, temperature: float=0.0",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "OpenAI"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/llm.py",
+    "line": 98,
+    "name": "LLMExtractor._chat",
+    "arguments": "self, system: str, user: str",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "retry",
+      "retry_if_exception",
+      "self.client.chat.completions.create",
+      "stop_after_attempt",
+      "wait_exponential"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/llm.py",
+    "line": 112,
+    "name": "LLMExtractor._doc_text",
+    "arguments": "doc: dict",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "doc.get",
+      "f'标题：{title}\\n正文：{body}'.strip"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/llm.py",
+    "line": 118,
+    "name": "LLMExtractor.extract",
+    "arguments": "self, doc: dict",
+    "returns": "list[dict]",
+    "purpose": "单文档 → 技术三元组片段 [{relation, tail, tail_type}]。",
+    "calls": [
+      "_parse_json",
+      "data.get",
+      "doc.get",
+      "log.warning",
+      "self._chat",
+      "self._doc_text",
+      "self._validate"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/llm.py",
+    "line": 129,
+    "name": "LLMExtractor.extract_batch",
+    "arguments": "self, docs: list[dict]",
+    "returns": "list[dict]",
+    "purpose": "No docstring",
+    "calls": [
+      "out.extend",
+      "self.extract"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/llm.py",
+    "line": 135,
+    "name": "LLMExtractor.extract_tech_pairs",
+    "arguments": "self, doc: dict, known_tech_names: list[str], relations: Iterable[str] | None=None",
+    "returns": "list[dict]",
+    "purpose": "单文档 → 定向 tech→tech 三元组 [{\"head\",\"relation\",\"tail\"}]（head/tail 均为技术实体名）。",
+    "calls": [
+      "', '.join",
+      "(p.get('tail') or '').strip",
+      "_parse_json",
+      "all",
+      "data.get",
+      "doc.get",
+      "isinstance",
+      "log.warning",
+      "n.strip",
+      "out.append",
+      "p.get",
+      "p['head'].strip",
+      "seen.add",
+      "self._chat",
+      "self._doc_text",
+      "set",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/llm.py",
+    "line": 185,
+    "name": "LLMExtractor.extract_tone",
+    "arguments": "self, text: str",
+    "returns": "float | None",
+    "purpose": "中文新闻情感（-1..1），失败返回 None。",
+    "calls": [
+      "_parse_json",
+      "data.get",
+      "float",
+      "log.warning",
+      "max",
+      "min",
+      "self._chat"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/llm.py",
+    "line": 200,
+    "name": "LLMExtractor._validate",
+    "arguments": "triples: list[dict]",
+    "returns": "list[dict]",
+    "purpose": "白名单过滤 + 去重（关系/实体类型 + tail 名）。",
+    "calls": [
+      "(t.get('tail') or '').strip",
+      "all",
+      "isinstance",
+      "out.append",
+      "seen.add",
+      "set",
+      "t.get"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 38,
+    "name": "short_id",
+    "arguments": "openalex_id: str | None",
+    "returns": "str | None",
+    "purpose": "https://openalex.org/W... → W...",
+    "calls": [
+      "openalex_id.lower",
+      "openalex_id.rstrip",
+      "openalex_id.rstrip('/').rsplit",
+      "openalex_id.startswith"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 49,
+    "name": "normalize_name",
+    "arguments": "name: str | None",
+    "returns": "str",
+    "purpose": "小写 / 去空白 / 去标点（对齐用）。",
+    "calls": [
+      "name.lower",
+      "re.sub",
+      "re.sub('\\\\s+', ' ', s).strip"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 61,
+    "name": "deterministic_entity_id",
+    "arguments": "source: str, type_: str, name: str",
+    "returns": "str",
+    "purpose": "确定性 entity_id（name-based 实体未命中时的兜底）。",
+    "calls": [
+      "f'{source}|{type_}|{normalize_name(name)}'.encode",
+      "hashlib.sha1",
+      "hashlib.sha1(f'{source}|{type_}|{normalize_name(name)}'.encode('utf-8')).hexdigest",
+      "normalize_name",
+      "type_.lower"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 67,
+    "name": "_triple",
+    "arguments": "head, head_type, relation, tail, tail_type, time, source",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 86,
+    "name": "_NodeBuilder.__init__",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 89,
+    "name": "_NodeBuilder.add",
+    "arguments": "self, node_id: str, ntype: str, name: str | None, entity_id: str | None=_ANCHOR, source: str | None=None, **extra",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "existing.get",
+      "extra.items",
+      "node.update",
+      "self._nodes.get"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 121,
+    "name": "_NodeBuilder.result",
+    "arguments": "self",
+    "returns": "list[dict]",
+    "purpose": "No docstring",
+    "calls": [
+      "list",
+      "self._nodes.values"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 128,
+    "name": "extract_triples",
+    "arguments": "works: Iterable[dict], max_concepts: int=5, max_refs: int=10",
+    "returns": "list[dict]",
+    "purpose": "No docstring",
+    "calls": [
+      "_triple",
+      "a.get",
+      "author.get",
+      "c.get",
+      "inst.get",
+      "short_id",
+      "sorted",
+      "triples.append",
+      "w.get"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 169,
+    "name": "build_nodes",
+    "arguments": "works: Iterable[dict], max_refs: int=10",
+    "returns": "list[dict]",
+    "purpose": "No docstring",
+    "calls": [
+      "_NodeBuilder",
+      "a.get",
+      "author.get",
+      "c.get",
+      "inst.get",
+      "nb.add",
+      "nb.result",
+      "short_id",
+      "w.get"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 192,
+    "name": "extract_arxiv",
+    "arguments": "records: Iterable[dict]",
+    "returns": "tuple[list[dict], list[dict]]",
+    "purpose": "Paper→Concept（category）/ Paper→Author。",
+    "calls": [
+      "_NodeBuilder",
+      "_triple",
+      "a.get",
+      "deterministic_entity_id",
+      "nb.add",
+      "nb.result",
+      "r.get",
+      "triples.append"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 218,
+    "name": "extract_patents",
+    "arguments": "records: Iterable[dict]",
+    "returns": "tuple[list[dict], list[dict]]",
+    "purpose": "Patent→Concept（CPC）/ Patent→Institution（受让人）/ Patent→Person（发明人）。",
+    "calls": [
+      "_NodeBuilder",
+      "_triple",
+      "deterministic_entity_id",
+      "nb.add",
+      "nb.result",
+      "r.get",
+      "triples.append"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 245,
+    "name": "extract_github",
+    "arguments": "records: Iterable[dict]",
+    "returns": "tuple[list[dict], list[dict]]",
+    "purpose": "Repo→Concept（topic）。",
+    "calls": [
+      "_NodeBuilder",
+      "_triple",
+      "nb.add",
+      "nb.result",
+      "r.get",
+      "triples.append"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 265,
+    "name": "extract_news",
+    "arguments": "records: Iterable[dict]",
+    "returns": "tuple[list[dict], list[dict]]",
+    "purpose": "News→Concept（GDELT theme）/ News→Person·Institution（mentions）。",
+    "calls": [
+      "_NodeBuilder",
+      "_triple",
+      "deterministic_entity_id",
+      "nb.add",
+      "nb.result",
+      "r.get",
+      "triples.append"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 296,
+    "name": "dedupe_earliest",
+    "arguments": "triples: list[dict]",
+    "returns": "list[dict]",
+    "purpose": "同 (head, relation, tail) 只保留最早 time（ISO 日期可直接按字符串比较）。",
+    "calls": [
+      "best.get",
+      "best.values",
+      "list",
+      "prev.get",
+      "t.get"
+    ]
+  },
+  {
+    "file": "techtrend/extraction/structured.py",
+    "line": 307,
+    "name": "dedupe_events",
+    "arguments": "triples: list[dict]",
+    "returns": "list[dict]",
+    "purpose": "Remove exact evidence duplicates while preserving dated/source/versioned events.",
+    "calls": [
+      "result.append",
+      "seen.add",
+      "set",
+      "triple.get",
+      "tuple"
+    ]
+  },
+  {
+    "file": "techtrend/graph/alignment.py",
+    "line": 36,
+    "name": "_norm_doi",
+    "arguments": "doi: str | None",
+    "returns": "str | None",
+    "purpose": "No docstring",
+    "calls": [
+      "doi.strip",
+      "doi.strip().lower",
+      "len",
+      "value.startswith"
+    ]
+  },
+  {
+    "file": "techtrend/graph/alignment.py",
+    "line": 47,
+    "name": "_fuzzy_match",
+    "arguments": "name: str, candidates: dict[str, dict], threshold: float",
+    "returns": "dict | None",
+    "purpose": "在 candidates（normalized_name → node）中找 ≥ threshold 的最近名，无则 None。",
+    "calls": [
+      "candidates.keys",
+      "difflib.SequenceMatcher",
+      "difflib.SequenceMatcher(None, name, best_key).ratio",
+      "difflib.SequenceMatcher(None, name, k).ratio",
+      "list",
+      "max",
+      "process.extractOne"
+    ]
+  },
+  {
+    "file": "techtrend/graph/alignment.py",
+    "line": 66,
+    "name": "align_entities",
+    "arguments": "nodes: Iterable[dict], triples: Iterable[dict], threshold: float=0.9, use_llm: bool=False",
+    "returns": "tuple[list[dict], list[dict], list[dict]]",
+    "purpose": "对齐 nodes/triples → (对齐后 nodes, 对齐后 triples, audit 行)。",
+    "calls": [
+      "_MATCH_TARGET.get",
+      "_fuzzy_match",
+      "_norm_doi",
+      "anchored_index[n['type']].setdefault",
+      "anchored_index[target_type].get",
+      "audit.append",
+      "deterministic_entity_id",
+      "dict",
+      "doi_index.setdefault",
+      "len",
+      "log.info",
+      "n.get",
+      "node_by_id.get",
+      "normalize_name",
+      "out_triples.append"
+    ]
+  },
+  {
+    "file": "techtrend/graph/loader.py",
+    "line": 10,
+    "name": "load_triples",
+    "arguments": "client: Neo4jClient, triples: Iterable[dict], nodes: Iterable[dict] | None=None",
+    "returns": "dict",
+    "purpose": "建 schema 后批量 upsert，返回 {\"nodes\": N, \"edges\": M}。",
+    "calls": [
+      "client.create_schema",
+      "client.upsert_triples"
+    ]
+  },
+  {
+    "file": "techtrend/graph/neo4j_client.py",
+    "line": 41,
+    "name": "Neo4jClient.__init__",
+    "arguments": "self, uri: str, user: str, password: str, database: str='neo4j'",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "GraphDatabase.driver"
+    ]
+  },
+  {
+    "file": "techtrend/graph/neo4j_client.py",
+    "line": 45,
+    "name": "Neo4jClient.verify_connectivity",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.driver.verify_connectivity"
+    ]
+  },
+  {
+    "file": "techtrend/graph/neo4j_client.py",
+    "line": 48,
+    "name": "Neo4jClient.create_schema",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "增加 entity_id 唯一约束和索引，不删除或迁移已有数据。",
+    "calls": [
+      "label.lower",
+      "log.info",
+      "self.driver.session",
+      "session.run"
+    ]
+  },
+  {
+    "file": "techtrend/graph/neo4j_client.py",
+    "line": 60,
+    "name": "Neo4jClient._node_props",
+    "arguments": "n: dict",
+    "returns": "dict[str, Any] | None",
+    "purpose": "节点属性按类型分支写入；返回 None 表示该节点标签非法，跳过。",
+    "calls": [
+      "n.get"
+    ]
+  },
+  {
+    "file": "techtrend/graph/neo4j_client.py",
+    "line": 90,
+    "name": "Neo4jClient.upsert_triples",
+    "arguments": "self, triples: Iterable[dict], nodes: Iterable[dict] | None=None",
+    "returns": "tuple[int, int]",
+    "purpose": "MERGE 批量 upsert → 返回图中（节点数, 边数）总数。",
+    "calls": [
+      "' OR '.join",
+      "_RELATION_TYPES.get",
+      "int",
+      "list",
+      "log.info",
+      "n.get",
+      "self._event_id",
+      "self._node_props",
+      "self.driver.session",
+      "session.execute_write",
+      "session.run",
+      "session.run('MATCH ()-[r]->() WHERE type(r) IN $types RETURN count(r)', types=list(_EDGE_TYPES)).single",
+      "session.run(f\"MATCH (n) WHERE {' OR '.join(('n:' + l for l in _NODE_LABELS))} RETURN count(n)\").single",
+      "t.get",
+      "tx.run"
+    ]
+  },
+  {
+    "file": "techtrend/graph/neo4j_client.py",
+    "line": 97,
+    "name": "Neo4jClient.upsert_triples.do_write",
+    "arguments": "tx",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "_RELATION_TYPES.get",
+      "n.get",
+      "self._event_id",
+      "self._node_props",
+      "t.get",
+      "tx.run"
+    ]
+  },
+  {
+    "file": "techtrend/graph/neo4j_client.py",
+    "line": 152,
+    "name": "Neo4jClient._event_id",
+    "arguments": "triple: dict",
+    "returns": "str",
+    "purpose": "Keep distinct dated/source/versioned evidence, idempotent across reruns.",
+    "calls": [
+      "hashlib.sha256",
+      "hashlib.sha256(json.dumps(values, ensure_ascii=False).encode('utf-8')).hexdigest",
+      "json.dumps",
+      "json.dumps(values, ensure_ascii=False).encode",
+      "triple.get"
+    ]
+  },
+  {
+    "file": "techtrend/graph/neo4j_client.py",
+    "line": 159,
+    "name": "Neo4jClient.close",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.driver.close"
+    ]
+  },
+  {
+    "file": "techtrend/io.py",
+    "line": 7,
+    "name": "write_jsonl",
+    "arguments": "path: Path, rows: Iterable[dict]",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "Path",
+      "f.write",
+      "json.dumps",
+      "open",
+      "path.parent.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/io.py",
+    "line": 15,
+    "name": "append_jsonl",
+    "arguments": "path: Path, rows: Iterable[dict]",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "Path",
+      "f.write",
+      "json.dumps",
+      "open",
+      "path.parent.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/io.py",
+    "line": 23,
+    "name": "read_jsonl",
+    "arguments": "path: Path",
+    "returns": "list[dict]",
+    "purpose": "No docstring",
+    "calls": [
+      "Path",
+      "json.loads",
+      "line.strip",
+      "open",
+      "path.exists",
+      "rows.append"
+    ]
+  },
+  {
+    "file": "techtrend/logging_config.py",
+    "line": 11,
+    "name": "_reconfigure_stdout_utf8",
+    "arguments": "",
+    "returns": "None",
+    "purpose": "Windows 下把控制台输出切到 UTF-8，避免中文乱码。",
+    "calls": [
+      "getattr",
+      "reconfigure"
+    ]
+  },
+  {
+    "file": "techtrend/logging_config.py",
+    "line": 19,
+    "name": "setup_logging",
+    "arguments": "level: str='INFO', log_dir: Path=Path('logs')",
+    "returns": "logging.Logger",
+    "purpose": "配置并返回 root logger；可重复调用（幂等）。",
+    "calls": [
+      "Path",
+      "_reconfigure_stdout_utf8",
+      "console.setFormatter",
+      "file_handler.setFormatter",
+      "level.upper",
+      "log_dir.mkdir",
+      "logging.Formatter",
+      "logging.StreamHandler",
+      "logging.getLogger",
+      "logging.getLogger(noisy).setLevel",
+      "logging.handlers.TimedRotatingFileHandler",
+      "root.addHandler",
+      "root.setLevel"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/collab.py",
+    "line": 29,
+    "name": "score_cache_payload",
+    "arguments": "scores: dict, triples: list[dict], settings",
+    "returns": "dict",
+    "purpose": "Bind cached scores to historical facts and model parameters, without secrets.",
+    "calls": [
+      "getattr",
+      "hashlib.sha256",
+      "hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest",
+      "json.dumps",
+      "json.dumps(payload, sort_keys=True, ensure_ascii=False).encode"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/collab.py",
+    "line": 40,
+    "name": "signal_agent_scores",
+    "arguments": "works: list[dict], settings",
+    "returns": "dict[str, float]",
+    "purpose": "信号 agent：Concept 级相对份额动量分（[0,1]，与 predict `_run_share_signal` 同源）。",
+    "calls": [
+      "build_concept_monthly_counts",
+      "c.strip",
+      "concept_share_momentum",
+      "df.drop",
+      "settings.openalex_concept_ids.split"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/collab.py",
+    "line": 53,
+    "name": "link_agent_scores",
+    "arguments": "triples: list[dict], settings",
+    "returns": "dict[str, float]",
+    "purpose": "链接预测 agent：TKG 外推的未来链接分（原始分，未归一）。",
+    "calls": [
+      "cache.exists",
+      "cache.read_text",
+      "cached.get",
+      "cygnet.encode_ids",
+      "cygnet.future_link_scores",
+      "cygnet.train_cygnet",
+      "date.today",
+      "date.today().isoformat",
+      "dict.fromkeys",
+      "isinstance",
+      "json.loads",
+      "len",
+      "list",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "score_cache_payload",
+      "settings.techpair_relations.split",
+      "settings.tkg_doc_types.split",
+      "tp.apply_graph_scope",
+      "tp.fit_graph_scope",
+      "tp.load_directed_edges",
+      "tp.project_t2t",
+      "tp.temporal_split_3way",
+      "x.strip"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/collab.py",
+    "line": 105,
+    "name": "cross_examine",
+    "arguments": "signal_scores: dict[str, float], link_scores: dict[str, float], signal_weight: float=0.5",
+    "returns": "tuple[list[dict], list[dict]]",
+    "purpose": "两路独立分 → 秩归一 → 分类 + 共识排序。返回 (consensus_rows, conflicts)。",
+    "calls": [
+      "l_rank.get",
+      "link_scores.get",
+      "round",
+      "rows.append",
+      "rows.sort",
+      "s_rank.get",
+      "set",
+      "signal_scores.get",
+      "sorted",
+      "zscore_rank"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/collab.py",
+    "line": 162,
+    "name": "collaborate",
+    "arguments": "works: list[dict], triples: list[dict], settings",
+    "returns": "dict",
+    "purpose": "两个 agent 独立打分 → 交叉质证 → 共识 + 冲突。",
+    "calls": [
+      "_count",
+      "build_concept_monthly_counts",
+      "concept_names",
+      "cross_examine",
+      "date.today",
+      "date.today().isoformat",
+      "len",
+      "link_agent_scores",
+      "log.info",
+      "log.warning",
+      "names.get",
+      "signal_agent_scores",
+      "str",
+      "sum",
+      "t.get",
+      "w.get"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/collab.py",
+    "line": 189,
+    "name": "collaborate._count",
+    "arguments": "verdict: str",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/notify.py",
+    "line": 21,
+    "name": "push_report",
+    "arguments": "settings: Settings, report_text: str, channels: list[str] | None=None",
+    "returns": "dict",
+    "purpose": "按渠道推送报告文本，返回 {channel: status}。",
+    "calls": [
+      "_HANDLERS.get",
+      "c.strip",
+      "handler",
+      "log.exception",
+      "log.warning",
+      "settings.notify_channels.split"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/notify.py",
+    "line": 40,
+    "name": "_notify_file",
+    "arguments": "settings: Settings, text: str",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "log.info",
+      "path.parent.mkdir",
+      "path.write_text"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/notify.py",
+    "line": 48,
+    "name": "_notify_telegram",
+    "arguments": "settings: Settings, text: str",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "client.post",
+      "httpx.Client",
+      "log.info",
+      "resp.raise_for_status"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/notify.py",
+    "line": 63,
+    "name": "_notify_discord",
+    "arguments": "settings: Settings, text: str",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "client.post",
+      "httpx.Client",
+      "log.info",
+      "resp.raise_for_status"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/runbook.py",
+    "line": 38,
+    "name": "_run_id",
+    "arguments": "",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "datetime.now",
+      "datetime.now().strftime"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/runbook.py",
+    "line": 42,
+    "name": "_new_records",
+    "arguments": "collect_result: dict",
+    "returns": "dict[str, int]",
+    "purpose": "从 collect 结果抽各源 id 去重后的新增条数（只取 int，忽略 error/unknown/star 快照）。",
+    "calls": [
+      "collect_result.get",
+      "isinstance",
+      "sources.items"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/runbook.py",
+    "line": 48,
+    "name": "_is_noop",
+    "arguments": "sources: dict, settings: Settings",
+    "returns": "bool",
+    "purpose": "全源 0 新增 → 短路下游。有源 error 时不短路（无法确定是否真无新增）。",
+    "calls": [
+      "any",
+      "isinstance",
+      "new.values",
+      "sources.items",
+      "sources.values",
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/runbook.py",
+    "line": 61,
+    "name": "_run_stage",
+    "arguments": "stage_pool: dict, name: str, role_label: str",
+    "returns": "dict",
+    "purpose": "执行单个底层阶段，打角色标签；异常不抛出（记录 error 继续）。",
+    "calls": [
+      "log.error",
+      "log.exception",
+      "log.info",
+      "result.get",
+      "stage.run",
+      "stage_pool.get",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/runbook.py",
+    "line": 77,
+    "name": "_review_checkpoint",
+    "arguments": "settings: Settings, run_id: str, results: list[dict]",
+    "returns": "bool",
+    "purpose": "HITL 审校卡点（reviewer 角色）。auto 放行时直接返回 True。",
+    "calls": [
+      "appr_path.exists",
+      "appr_path.read_text",
+      "appr_path.unlink",
+      "bool",
+      "data.get",
+      "json.dumps",
+      "json.loads",
+      "log.info",
+      "log.warning",
+      "out_dir.mkdir",
+      "r.get",
+      "req_path.write_text",
+      "time.sleep",
+      "time.time"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/runbook.py",
+    "line": 119,
+    "name": "_append_manifest",
+    "arguments": "settings: Settings, manifest: dict",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "Path",
+      "append_jsonl",
+      "log.info"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/runbook.py",
+    "line": 125,
+    "name": "run_daily",
+    "arguments": "settings: Settings",
+    "returns": "dict",
+    "purpose": "执行一次每日运行，返回 run manifest dict。",
+    "calls": [
+      "','.join",
+      "STAGE_ROLE.get",
+      "_append_manifest",
+      "_is_noop",
+      "_new_records",
+      "_review_checkpoint",
+      "_run_id",
+      "_run_stage",
+      "all",
+      "collect_result.get",
+      "datetime.now",
+      "finished.isoformat",
+      "get_default_stages",
+      "log.info",
+      "r.get",
+      "results.append",
+      "snapshot_outputs",
+      "started.isoformat"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/scheduler.py",
+    "line": 24,
+    "name": "build_scheduler",
+    "arguments": "settings",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": [
+      "' '.join",
+      "BlockingScheduler",
+      "CronTrigger.from_crontab",
+      "SystemExit",
+      "log.info",
+      "scheduler.add_job",
+      "str",
+      "subprocess.run"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/scheduler.py",
+    "line": 36,
+    "name": "build_scheduler._job",
+    "arguments": "",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "' '.join",
+      "log.info",
+      "str",
+      "subprocess.run"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/scheduler.py",
+    "line": 46,
+    "name": "_fire_once",
+    "arguments": "python: str | None",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "' '.join",
+      "log.info",
+      "str",
+      "subprocess.run"
+    ]
+  },
+  {
+    "file": "techtrend/orchestration/scheduler.py",
+    "line": 54,
+    "name": "main",
+    "arguments": "",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "_fire_once",
+      "argparse.ArgumentParser",
+      "build_scheduler",
+      "get_settings",
+      "log.error",
+      "log.info",
+      "parser.add_argument",
+      "parser.parse_args",
+      "scheduler.start",
+      "setup_logging"
+    ]
+  },
+  {
+    "file": "techtrend/pipeline.py",
+    "line": 12,
+    "name": "Pipeline.__init__",
+    "arguments": "self, settings: Settings",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "get_default_stages"
+    ]
+  },
+  {
+    "file": "techtrend/pipeline.py",
+    "line": 16,
+    "name": "Pipeline.run",
+    "arguments": "self",
+    "returns": "list[dict]",
+    "purpose": "No docstring",
+    "calls": [
+      "len",
+      "log.error",
+      "log.info",
+      "result.get",
+      "results.append",
+      "snapshot_outputs",
+      "stage.run"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/calendar.py",
+    "line": 5,
+    "name": "calendar_bins",
+    "arguments": "observed: list[str], mode: str='month'",
+    "returns": "list[str]",
+    "purpose": "Return inclusive day/month bins between observed endpoints, without I/O.",
+    "calls": [
+      "ValueError",
+      "max",
+      "min",
+      "pd.period_range",
+      "pd.period_range(min(observed), max(observed), freq='M' if mode == 'month' else 'D').astype",
+      "pd.period_range(min(observed), max(observed), freq='M' if mode == 'month' else 'D').astype(str).tolist"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/citations.py",
+    "line": 35,
+    "name": "forward_fact",
+    "arguments": "e: dict, min_time: str | None=None, max_time: str | None=None",
+    "returns": "dict | None",
+    "purpose": "单个后向引用对 {\"citing\",\"citing_date\",\"cited\",\"cited_date\"} → 前向事实 dict。",
+    "calls": [
+      "e.get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/citations.py",
+    "line": 67,
+    "name": "build_forward_citation_edges",
+    "arguments": "backward_edges: Iterable[dict], min_time: str | None=None, max_time: str | None=None",
+    "returns": "list[dict]",
+    "purpose": "后向引用对 → 前向引用事实流。",
+    "calls": [
+      "facts.append",
+      "forward_fact",
+      "len",
+      "log.info"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/citations.py",
+    "line": 97,
+    "name": "_sample_patents",
+    "arguments": "totals: dict[str, int], eligible: set[str], sampling: str, n_bins: int, per_bin: int, max_patents: int",
+    "returns": "set[str]",
+    "purpose": "在 eligible（已过 min_citations 滤噪）上选样，返回保留的专利 ID 集合。",
+    "calls": [
+      "bucket.sort",
+      "buckets[idx].append",
+      "int",
+      "kept.update",
+      "log_vals.items",
+      "log_vals.values",
+      "math.log10",
+      "max",
+      "min",
+      "range",
+      "set",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/citations.py",
+    "line": 134,
+    "name": "build_patent_citation_monthly",
+    "arguments": "facts: Iterable[dict], mode: str='month', min_citations: int=2, max_patents: int=5000, sampling: str='stratified', n_bins: int=5, per_bin: int=2000",
+    "returns": "pd.DataFrame",
+    "purpose": "前向引用事实流 → patent × 时间箱 累积被引矩阵。",
+    "calls": [
+      "_bin",
+      "_sample_patents",
+      "calendar_bins",
+      "cited_bins.items",
+      "cited_bins.values",
+      "cited_bins[h].append",
+      "cum.get",
+      "defaultdict",
+      "df.reindex",
+      "df.reindex(bins, axis=1).ffill",
+      "df.reindex(bins, axis=1).ffill(axis=1).fillna",
+      "f.get",
+      "len",
+      "pd.DataFrame",
+      "pd.DataFrame.from_dict",
+      "set",
+      "sorted",
+      "totals.items"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/citations.py",
+    "line": 154,
+    "name": "build_patent_citation_monthly._bin",
+    "arguments": "t: str",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 32,
+    "name": "encode_ids",
+    "arguments": "triples: Iterable[dict]",
+    "returns": "tuple[dict[str, int], dict[str, int], dict[int, str], dict[int, str]]",
+    "purpose": "实体/关系 → 连续 id。返回 (e2id, r2id, id2e, id2r)。",
+    "calls": [
+      "e2id.items",
+      "enumerate",
+      "r2id.items",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 43,
+    "name": "build_history",
+    "arguments": "train: list[dict], e2id: dict[str, int], r2id: dict[str, int]",
+    "returns": "dict[tuple[int, int], Counter]",
+    "purpose": "(s, r) → 历史 tail 频次（CyGNet 的 copy 词表）。",
+    "calls": [
+      "defaultdict",
+      "e2id.get",
+      "r2id.get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 58,
+    "name": "build_copy_matrix",
+    "arguments": "history: dict[tuple[int, int], Counter], num_entities: int, num_relations: int",
+    "returns": "np.ndarray",
+    "purpose": "历史频次 → 归一化 copy 分布矩阵 [num_relations, num_entities, num_entities]。",
+    "calls": [
+      "cnt.items",
+      "cnt.values",
+      "history.items",
+      "np.zeros",
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 75,
+    "name": "copy_only_score",
+    "arguments": "s: int, r: int, o: int, history: dict[tuple[int, int], Counter], id2e: dict[int, str] | None=None",
+    "returns": "float",
+    "purpose": "Tier1 基线：仅复制历史——tail 在 (s,r) 历史中的频次。无历史则 0。",
+    "calls": [
+      "Counter",
+      "float",
+      "history.get",
+      "history.get((s, r), Counter()).get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 96,
+    "name": "CyGNet.__init__",
+    "arguments": "self, num_entities: int, num_relations: int, dim: int, alpha: float=0.5",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": [
+      "nn.Embedding",
+      "nn.init.xavier_uniform_",
+      "super",
+      "super().__init__"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 107,
+    "name": "CyGNet.generate_logits",
+    "arguments": "self, s: torch.Tensor, r: torch.Tensor",
+    "returns": "torch.Tensor",
+    "purpose": "DistMult 式打分：(E[s] ∘ R[r]) · E[o] → [B, N]。",
+    "calls": [
+      "self.entity_emb",
+      "self.entity_emb.weight.t",
+      "self.relation_emb"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 117,
+    "name": "train_cygnet",
+    "arguments": "train: list[dict], val: list[dict], dim: int=128, epochs: int=30, neg_samples: int=10, alpha: float=0.5, lr: float=0.01, seed: int=42",
+    "returns": "dict",
+    "purpose": "负采样 + margin ranking 训练（每条正例采 neg_samples 个非真 tail）；val 上早停选最优轮次。",
+    "calls": [
+      "CyGNet",
+      "_neg_margin_loss",
+      "_neg_margin_loss(s_val, r_val, o_val).item",
+      "_to_ids",
+      "build_copy_matrix",
+      "build_history",
+      "encode_ids",
+      "float",
+      "idx.unsqueeze",
+      "len",
+      "log.info",
+      "loss.backward",
+      "loss.item",
+      "max",
+      "model.entity_emb.weight.data.copy_",
+      "model.entity_emb.weight.detach",
+      "model.entity_emb.weight.detach().clone",
+      "model.eval",
+      "model.generate_logits",
+      "model.parameters",
+      "model.relation_emb.weight.data.copy_",
+      "model.relation_emb.weight.detach",
+      "model.relation_emb.weight.detach().clone",
+      "model.train",
+      "o.unsqueeze",
+      "optimizer.step",
+      "optimizer.zero_grad",
+      "pos.unsqueeze",
+      "range",
+      "torch.arange",
+      "torch.manual_seed",
+      "torch.no_grad",
+      "torch.optim.Adam",
+      "torch.randint",
+      "torch.randperm",
+      "torch.relu",
+      "torch.relu(1.0 - pos.unsqueeze(1) + neg_s).mean",
+      "torch.tensor",
+      "torch.where"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 143,
+    "name": "train_cygnet._to_ids",
+    "arguments": "triples: list[dict]",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": [
+      "torch.tensor"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 154,
+    "name": "train_cygnet._neg_margin_loss",
+    "arguments": "s, r, o",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": [
+      "idx.unsqueeze",
+      "len",
+      "model.generate_logits",
+      "o.unsqueeze",
+      "pos.unsqueeze",
+      "torch.arange",
+      "torch.randint",
+      "torch.relu",
+      "torch.relu(1.0 - pos.unsqueeze(1) + neg_s).mean",
+      "torch.where"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 222,
+    "name": "_score_all_np",
+    "arguments": "bundle: dict, s: np.ndarray, r: np.ndarray",
+    "returns": "np.ndarray",
+    "purpose": "批量对全部实体打分 [B, N]。",
+    "calls": [
+      "e.sum",
+      "logits.max",
+      "model.entity_emb.weight.detach",
+      "model.entity_emb.weight.detach().numpy",
+      "model.relation_emb.weight.detach",
+      "model.relation_emb.weight.detach().numpy",
+      "np.exp"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 237,
+    "name": "build_known_tails",
+    "arguments": "triples: list[dict], e2id: dict[str, int], r2id: dict[str, int]",
+    "returns": "dict[tuple[int, int], np.ndarray]",
+    "purpose": "(s, r) → 全部时间段出现过的 tail 集合（int 数组，含 test 自身），供 filtered 剔除。",
+    "calls": [
+      "defaultdict",
+      "e2id.get",
+      "np.fromiter",
+      "r2id.get",
+      "tails.items",
+      "tails[s, r].add"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 252,
+    "name": "evaluate_cygnet",
+    "arguments": "bundle: dict, test: list[dict], k: tuple[int, ...]=_K, known_triples: list[dict] | None=None",
+    "returns": "dict",
+    "purpose": "CyGNet filtered 排名评估（向量化，chunk 处理）。返回 MRR + Hits@1/3/10。",
+    "calls": [
+      "_score_all_np",
+      "build_known_tails",
+      "hits_at",
+      "int",
+      "known_tails.get",
+      "len",
+      "log.warning",
+      "mrr_at",
+      "np.arange",
+      "np.array",
+      "np.ones",
+      "np.sum",
+      "range",
+      "ranks.append"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 307,
+    "name": "evaluate_copy_only",
+    "arguments": "e2id: dict[str, int], r2id: dict[str, int], history: dict[tuple[int, int], Counter], test: list[dict], k: tuple[int, ...]=_K, known_triples: list[dict] | None=None",
+    "returns": "dict",
+    "purpose": "copy-only 基线 filtered 排名评估（确定性，无训练，纯 copy 分布）。",
+    "calls": [
+      "CyGNet",
+      "build_copy_matrix",
+      "evaluate_cygnet",
+      "len"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/cygnet.py",
+    "line": 327,
+    "name": "future_link_scores",
+    "arguments": "bundle: dict, heads: list[str]",
+    "returns": "dict[str, float]",
+    "purpose": "每个实体的「未来链接概率」——未来查询头对该实体的平均融合分。",
+    "calls": [
+      "_score_all_np",
+      "float",
+      "len",
+      "np.array",
+      "np.zeros",
+      "range",
+      "scores.mean"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 43,
+    "name": "_month_of",
+    "arguments": "t",
+    "returns": "str",
+    "purpose": "ISO 时间 → 'YYYY-MM'（截取前 7 位）。",
+    "calls": []
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 48,
+    "name": "_month_add",
+    "arguments": "ym: str, n: int",
+    "returns": "str",
+    "purpose": "'YYYY-MM' 加减 n 个月。",
+    "calls": [
+      "divmod",
+      "int"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 56,
+    "name": "rolling_origins",
+    "arguments": "times: list[str], n_splits: int, test_months: int, step_months: int",
+    "returns": "list[tuple[str, str]]",
+    "purpose": "按时间生成 walk-forward 起点。返回 [(test_start, test_end)]（月字符串，升序）。",
+    "calls": [
+      "_month_add",
+      "_month_of",
+      "origins.append",
+      "origins.reverse",
+      "range",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 77,
+    "name": "walk_forward_splits",
+    "arguments": "triples: list[dict], origins: list[tuple[str, str]], embargo_months: int, mode: str='expanding', rolling_window_months: int=24",
+    "returns": "list[tuple[list[dict], list[dict]]]",
+    "purpose": "每折 (train, test)。",
+    "calls": [
+      "_month_add",
+      "_month_of",
+      "splits.append",
+      "t.get",
+      "test.append",
+      "train.append"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 114,
+    "name": "leak_check",
+    "arguments": "folds: list[tuple[list[dict], list[dict]]]",
+    "returns": "dict",
+    "purpose": "校验每折 train/test 时间不重叠 + 统计 test 独有实体（train 未见）。",
+    "calls": [
+      "_month_of",
+      "enumerate",
+      "len",
+      "max",
+      "min",
+      "t.get",
+      "test_only_per_fold.append",
+      "violations.append"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 157,
+    "name": "purge_label_overlap",
+    "arguments": "samples: list[tuple[int, float]], horizon: int, test_start_idx: int, purge: int",
+    "returns": "list[tuple[int, float]]",
+    "purpose": "剔除 label 窗口 [t, t+horizon) 与测试窗口重叠的训练样本。",
+    "calls": []
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 171,
+    "name": "_aggregate",
+    "arguments": "fold_metrics: list[dict], keys: list[str]",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "float",
+      "len",
+      "m.get",
+      "np.mean",
+      "np.std"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 183,
+    "name": "_tkg_fold",
+    "arguments": "train: list[dict], test: list[dict], cfg: dict",
+    "returns": "dict | None",
+    "purpose": "No docstring",
+    "calls": [
+      "_month_of",
+      "copy_metrics.get",
+      "cyg_metrics.get",
+      "cygnet.build_history",
+      "cygnet.encode_ids",
+      "cygnet.evaluate_copy_only",
+      "cygnet.evaluate_cygnet",
+      "cygnet.train_cygnet",
+      "len",
+      "log.exception",
+      "max",
+      "min",
+      "rotate_metrics.get",
+      "run_rotate",
+      "t.get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 223,
+    "name": "backtest_tkg",
+    "arguments": "facts: list[dict], cfg: dict",
+    "returns": "dict",
+    "purpose": "每折跑 copy-only / CyGNet / RotatE（时态），聚合 MRR/Hits mean±std。",
+    "calls": [
+      "_aggregate",
+      "_tkg_fold",
+      "apply_graph_scope",
+      "cfg.get",
+      "enumerate",
+      "fit_graph_scope",
+      "fold_metrics.append",
+      "len",
+      "log.info",
+      "log.warning",
+      "preprocessing.append",
+      "result.get",
+      "rolling_origins",
+      "walk_forward_splits"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 271,
+    "name": "_regression_fold",
+    "arguments": "monthly: pd.DataFrame, test_start: str, cfg: dict",
+    "returns": "dict | None",
+    "purpose": "No docstring",
+    "calls": [
+      "HistGradientBoostingRegressor",
+      "X_all.append",
+      "enumerate",
+      "float",
+      "len",
+      "list",
+      "mae",
+      "mape",
+      "model.fit",
+      "model.predict",
+      "model.predict(np.asarray(test_feats, dtype=np.float32)).tolist",
+      "monthly.iloc[:, :t0].sum",
+      "monthly.loc[cid].to_numpy",
+      "next",
+      "np.asarray",
+      "purge_label_overlap",
+      "range",
+      "rmse",
+      "series[t0:t0 + horizon].mean",
+      "series[t:t + horizon].mean",
+      "str",
+      "test_actuals.append",
+      "test_feats.append",
+      "totals.sort_values",
+      "totals.sort_values(ascending=False).head",
+      "totals.sort_values(ascending=False).head(top_k).index.tolist",
+      "y_all.append"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 339,
+    "name": "backtest_regression",
+    "arguments": "monthly: pd.DataFrame, cfg: dict",
+    "returns": "dict",
+    "purpose": "walk-forward MAE/RMSE/MAPE（含 purge），聚合 mean±std。",
+    "calls": [
+      "_aggregate",
+      "_regression_fold",
+      "enumerate",
+      "fold_metrics.append",
+      "len",
+      "list",
+      "log.info",
+      "log.warning",
+      "max",
+      "range",
+      "result.get",
+      "reversed"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 374,
+    "name": "_ranking_fold",
+    "arguments": "monthly: pd.DataFrame, test_start: str, test_end: str, cfg: dict",
+    "returns": "dict | None",
+    "purpose": "No docstring",
+    "calls": [
+      "(monthly[hist_cols].sum(axis=1) == 0).sum",
+      "bursts['concept'].tolist",
+      "detect_top_bursts",
+      "future_activity",
+      "future_growth_top_k",
+      "hist_df.sum",
+      "int",
+      "len",
+      "list",
+      "monthly[hist_cols].sum",
+      "ndcg_at_k",
+      "precision_at_k",
+      "recall_at_k",
+      "share_momentum_rank",
+      "share_momentum_scores",
+      "spearman_rho",
+      "top1_lift"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 430,
+    "name": "share_momentum_scores",
+    "arguments": "df: pd.DataFrame",
+    "returns": "dict[str, float]",
+    "purpose": "概念 → 相对份额动量分（供 Spearman 用完整分数，而非仅 top-k 列表）。",
+    "calls": [
+      "concept_share_momentum"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/evaluation.py",
+    "line": 437,
+    "name": "backtest_ranking",
+    "arguments": "monthly: pd.DataFrame, cfg: dict",
+    "returns": "dict",
+    "purpose": "每折相对份额动量（主）+ Kleinberg（消融）排名 vs 未来真值，聚合排序类指标。",
+    "calls": [
+      "_aggregate",
+      "_ranking_fold",
+      "enumerate",
+      "fold_metrics.append",
+      "len",
+      "list",
+      "log.info",
+      "log.warning",
+      "result.get",
+      "rolling_origins"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/fusion.py",
+    "line": 11,
+    "name": "parse_weights",
+    "arguments": "spec: str",
+    "returns": "dict[str, float]",
+    "purpose": "解析 \"burst=0.3,tkg=0.4,forecast=0.3\" → {name: weight}。",
+    "calls": [
+      "(spec or '').split",
+      "float",
+      "log.warning",
+      "name.strip",
+      "part.split",
+      "part.strip",
+      "val.strip"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/fusion.py",
+    "line": 25,
+    "name": "zscore_rank",
+    "arguments": "scores: dict[str, float]",
+    "returns": "dict[str, float]",
+    "purpose": "按秩归一到 [0,1]（处理缺失：调用方对缺失信号取 0）。",
+    "calls": [
+      "len",
+      "scores.items",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/fusion.py",
+    "line": 49,
+    "name": "fuse",
+    "arguments": "burst: dict[str, float], tkg: dict[str, float], forecast: dict[str, float], weights: dict[str, float], top_k: int, names: dict[str, str] | None=None",
+    "returns": "list[dict]",
+    "purpose": "三路信号秩归一后加权求和 → 排序 top_k。",
+    "calls": [
+      "len",
+      "log.info",
+      "n_burst.get",
+      "n_forecast.get",
+      "n_tkg.get",
+      "names.get",
+      "rows.append",
+      "rows.sort",
+      "set",
+      "weights.get",
+      "zscore_rank"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/kleinberg.py",
+    "line": 22,
+    "name": "_poisson_cost",
+    "arguments": "d: float, rate: float",
+    "returns": "float",
+    "purpose": "-ln P(count=d | rate)，Poisson。rate<=0 时：d==0 代价 0，否则 +inf。",
+    "calls": [
+      "math.lgamma",
+      "math.log"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/kleinberg.py",
+    "line": 29,
+    "name": "kleinberg_bursts",
+    "arguments": "series: Iterable[float], s: float=2.0, gamma: float=1.0",
+    "returns": "list[dict]",
+    "purpose": "检测突发区间。返回 [{\"start\", \"end\", \"weight\"}]，start/end 为箱下标（含端点）。",
+    "calls": [
+      "_poisson_cost",
+      "bursts.append",
+      "float",
+      "len",
+      "math.log",
+      "max",
+      "range",
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/kleinberg.py",
+    "line": 81,
+    "name": "_bin",
+    "arguments": "date: str, mode: str='month'",
+    "returns": "str",
+    "purpose": "把 publication_date 归到分箱：month → YYYY-MM；day → YYYY-MM-DD。",
+    "calls": []
+  },
+  {
+    "file": "techtrend/prediction/kleinberg.py",
+    "line": 88,
+    "name": "build_concept_monthly_counts",
+    "arguments": "works: Iterable[dict], mode: str='month'",
+    "returns": "pd.DataFrame",
+    "purpose": "concept × 时间箱 频次矩阵。index=concept 短 ID，columns=升序时间箱。",
+    "calls": [
+      "_bin",
+      "c.get",
+      "calendar_bins",
+      "counts.reindex",
+      "df.pivot_table",
+      "list",
+      "pd.DataFrame",
+      "records.append",
+      "set",
+      "short_id",
+      "sorted",
+      "w.get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/kleinberg.py",
+    "line": 111,
+    "name": "concept_names",
+    "arguments": "works: Iterable[dict]",
+    "returns": "dict[str, str]",
+    "purpose": "concept 短 ID → 显示名。",
+    "calls": [
+      "c.get",
+      "names.setdefault",
+      "short_id",
+      "w.get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/kleinberg.py",
+    "line": 122,
+    "name": "detect_top_bursts",
+    "arguments": "df: pd.DataFrame, top_k: int, s: float=2.0, gamma: float=1.0",
+    "returns": "pd.DataFrame",
+    "purpose": "对每个 concept 的时序跑 Kleinberg，按最大突发权重降序取 top_k。",
+    "calls": [
+      "df.loc[cid].sum",
+      "df.loc[cid].to_numpy",
+      "kleinberg_bursts",
+      "len",
+      "max",
+      "pd.DataFrame",
+      "rows.append",
+      "rows.sort",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/kleinberg.py",
+    "line": 141,
+    "name": "future_growth",
+    "arguments": "df: pd.DataFrame, future_months: int",
+    "returns": "dict[str, float]",
+    "purpose": "ground truth 增速：未来窗口相对历史窗口的频次增速（concept_id → growth）。",
+    "calls": [
+      "float",
+      "fut.mean",
+      "hist.mean",
+      "len",
+      "list",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/kleinberg.py",
+    "line": 156,
+    "name": "future_activity",
+    "arguments": "df: pd.DataFrame, future_months: int",
+    "returns": "dict[str, float]",
+    "purpose": "ground truth 未来活跃度：最后 future_months 月的月均频次（concept_id → activity）。",
+    "calls": [
+      "float",
+      "fut.loc[c].mean",
+      "len",
+      "list",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/kleinberg.py",
+    "line": 169,
+    "name": "future_growth_top_k",
+    "arguments": "df: pd.DataFrame, future_months: int, top_k: int",
+    "returns": "list[str]",
+    "purpose": "ground truth：未来窗口（最后 future_months 月）相对历史的频次增速 top-k。",
+    "calls": [
+      "future_growth",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/lifecycle.py",
+    "line": 28,
+    "name": "s_curve_stage",
+    "arguments": "series: Iterable[float], growth_window: int=6, emerging_threshold: float | None=None, min_history: int=12",
+    "returns": "str",
+    "purpose": "单条「累积」序列 → S 曲线阶段标签（目标④）。",
+    "calls": [
+      "float",
+      "len",
+      "min"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/lifecycle.py",
+    "line": 66,
+    "name": "s_curve_stages",
+    "arguments": "monthly: pd.DataFrame, growth_window: int=6, emerging_quantile: float=0.2, min_history: int=12",
+    "returns": "pd.Series",
+    "purpose": "累积矩阵（index=实体，columns=升序时间箱）→ 每实体阶段标签。",
+    "calls": [
+      "float",
+      "len",
+      "monthly.apply",
+      "monthly.iloc[:, -1].astype",
+      "pd.Series",
+      "row.to_numpy",
+      "s_curve_stage",
+      "totals.quantile"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/lifecycle.py",
+    "line": 92,
+    "name": "concept_lifecycle_stages",
+    "arguments": "monthly: pd.DataFrame, growth_window: int=6, emerging_quantile: float=0.2, min_history: int=12",
+    "returns": "pd.Series",
+    "purpose": "概念级 S 曲线（P6 主演示路径）：概念月度活动量 → 累积 → 逐概念阶段标签。",
+    "calls": [
+      "monthly.cumsum",
+      "pd.Series",
+      "s_curve_stages"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/lifecycle.py",
+    "line": 115,
+    "name": "mean_stage_curves",
+    "arguments": "cumulative: pd.DataFrame, stages: pd.Series",
+    "returns": "pd.DataFrame",
+    "purpose": "每个阶段一条「归一化累积」均值曲线（供 S 曲线形状叠加图）。",
+    "calls": [
+      "cumulative.reindex",
+      "cumulative.reindex(index=idx.intersection(cumulative.index)).dropna",
+      "idx.intersection",
+      "len",
+      "norm.mean",
+      "pd.DataFrame",
+      "sub.div",
+      "sub.div(rowmax, axis=0).fillna",
+      "sub.max",
+      "sub.max(axis=1).replace"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 8,
+    "name": "_top_k",
+    "arguments": "ranked, k: int",
+    "returns": "set",
+    "purpose": "No docstring",
+    "calls": [
+      "list",
+      "set"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 12,
+    "name": "precision_at_k",
+    "arguments": "ranked, truth, k: int",
+    "returns": "float",
+    "purpose": "No docstring",
+    "calls": [
+      "_top_k",
+      "len",
+      "set"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 19,
+    "name": "recall_at_k",
+    "arguments": "ranked, truth, k: int",
+    "returns": "float",
+    "purpose": "No docstring",
+    "calls": [
+      "_top_k",
+      "len",
+      "set"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 26,
+    "name": "mrr_at",
+    "arguments": "ranks: list[int]",
+    "returns": "float",
+    "purpose": "1/rank 均值（rank 从 1 起）。",
+    "calls": [
+      "len",
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 33,
+    "name": "hits_at",
+    "arguments": "ranks: list[int], k: int",
+    "returns": "float",
+    "purpose": "rank ≤ k 的比例。",
+    "calls": [
+      "len",
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 40,
+    "name": "mae",
+    "arguments": "actual, pred",
+    "returns": "float",
+    "purpose": "平均绝对误差。",
+    "calls": [
+      "abs",
+      "len",
+      "sum",
+      "zip"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 48,
+    "name": "rmse",
+    "arguments": "actual, pred",
+    "returns": "float",
+    "purpose": "均方根误差。",
+    "calls": [
+      "len",
+      "sum",
+      "zip"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 56,
+    "name": "mape",
+    "arguments": "actual, pred",
+    "returns": "float",
+    "purpose": "平均绝对百分比误差（0 真值跳过，防除零）。",
+    "calls": [
+      "abs",
+      "len",
+      "sum",
+      "zip"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 68,
+    "name": "spearman_rho",
+    "arguments": "pred_scores: dict, true_scores: dict",
+    "returns": "float | None",
+    "purpose": "Spearman 秩相关：预测分排序 vs 真值排序的单调相关性，[-1,1]。",
+    "calls": [
+      "len",
+      "math.sqrt",
+      "ranks",
+      "sorted",
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 78,
+    "name": "spearman_rho.ranks",
+    "arguments": "scores",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": [
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 97,
+    "name": "ndcg_at_k",
+    "arguments": "ranked: list, relevance: dict, k: int",
+    "returns": "float",
+    "purpose": "NDCG@K：位置折扣的排序命中质量（关注头部）。",
+    "calls": [
+      "enumerate",
+      "gain",
+      "len",
+      "math.expm1",
+      "math.log",
+      "math.log2",
+      "max",
+      "min",
+      "relevance.get",
+      "relevance.values",
+      "sorted",
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 108,
+    "name": "ndcg_at_k.gain",
+    "arguments": "t",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": [
+      "math.expm1",
+      "math.log",
+      "max",
+      "relevance.get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/metrics.py",
+    "line": 127,
+    "name": "top1_lift",
+    "arguments": "ranked: list, relevance: dict",
+    "returns": "float | None",
+    "purpose": "Top-1 Lift：榜首真值 / 全池真值均值，>1 表示有正向选技术能力。",
+    "calls": [
+      "len",
+      "relevance.get",
+      "relevance.values",
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/regression.py",
+    "line": 18,
+    "name": "build_lag_features",
+    "arguments": "series: pd.Series, lag: int",
+    "returns": "pd.DataFrame",
+    "purpose": "滞后特征（前 lag 月活动量），返回 DataFrame[lag_1..lag_k]，index=起始时间箱。",
+    "calls": [
+      "len",
+      "list",
+      "pd.DataFrame",
+      "range",
+      "series.to_numpy"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/regression.py",
+    "line": 30,
+    "name": "run_regression",
+    "arguments": "monthly: pd.DataFrame, horizon: int=6, min_history: int=12, top_k: int=100, lag: int=6, names: dict[str, str] | None=None",
+    "returns": "dict",
+    "purpose": "对最活跃 top-k 个 Concept 的月度活动序列做回测。",
+    "calls": [
+      "HistGradientBoostingRegressor",
+      "X_all.append",
+      "float",
+      "len",
+      "log.info",
+      "log.warning",
+      "mae",
+      "mape",
+      "model.fit",
+      "model.predict",
+      "model.predict(X_test).tolist",
+      "monthly.iloc[:, :origin].sum",
+      "monthly.loc[cid].to_numpy",
+      "names.get",
+      "np.asarray",
+      "range",
+      "rmse",
+      "series[L - horizon:L].mean",
+      "series[origin - lag:origin].mean",
+      "series[t:t + horizon].mean",
+      "str",
+      "test_actuals.append",
+      "test_cids.append",
+      "test_feats.append",
+      "test_recent.append",
+      "totals.sort_values",
+      "totals.sort_values(ascending=False).head",
+      "totals.sort_values(ascending=False).head(top_k).index.tolist",
+      "y_all.append",
+      "zip"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/rotatE.py",
+    "line": 21,
+    "name": "_as_labeled",
+    "arguments": "triples: Iterable[dict]",
+    "returns": "list[tuple[str, str, str]]",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/prediction/rotatE.py",
+    "line": 25,
+    "name": "_as_array",
+    "arguments": "triples: Iterable[dict]",
+    "returns": "unspecified",
+    "purpose": "pykeen 1.11 的 from_labeled_triples 需要 shape (n,3) dtype str 的 ndarray。",
+    "calls": [
+      "_as_labeled",
+      "np.asarray"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/rotatE.py",
+    "line": 32,
+    "name": "build_triples_factory",
+    "arguments": "triples: Iterable[dict]",
+    "returns": "unspecified",
+    "purpose": "构建 TriplesFactory（实体/关系 ID 编码）。",
+    "calls": [
+      "TriplesFactory.from_labeled_triples",
+      "_as_array",
+      "configure_model_storage"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/rotatE.py",
+    "line": 40,
+    "name": "temporal_split",
+    "arguments": "triples: list[dict], train_ratio: float=0.8",
+    "returns": "tuple[list[dict], list[dict]]",
+    "purpose": "按 time 升序切分，train=早 80%、test=晚 20%，时间不重叠。",
+    "calls": [
+      "int",
+      "len",
+      "sorted",
+      "t.get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/rotatE.py",
+    "line": 52,
+    "name": "random_split",
+    "arguments": "triples: list[dict], train_ratio: float=0.8, seed: int=42",
+    "returns": "tuple[list[dict], list[dict]]",
+    "purpose": "随机切分（固定种子，可复现），train/test 共享实体。",
+    "calls": [
+      "int",
+      "len",
+      "list",
+      "random.Random",
+      "random.Random(seed).shuffle"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/rotatE.py",
+    "line": 66,
+    "name": "_filter_known",
+    "arguments": "triples, entity_to_id, relation_to_id",
+    "returns": "list[tuple[str, str, str]]",
+    "purpose": "丢弃含 train 未见过实体/关系的 test 三元组（时态切分常引入新实体）。",
+    "calls": [
+      "_as_labeled",
+      "out.append"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/rotatE.py",
+    "line": 75,
+    "name": "_filter_known_array",
+    "arguments": "triples, entity_to_id, relation_to_id",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": [
+      "_filter_known",
+      "np.asarray"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/rotatE.py",
+    "line": 83,
+    "name": "run_rotate",
+    "arguments": "train: list[dict], test: list[dict], dim: int=128, epochs: int=50, device: str | None=None",
+    "returns": "dict",
+    "purpose": "跑 pykeen RotatE，返回 filtered 指标 dict。",
+    "calls": [
+      "TriplesFactory.from_labeled_triples",
+      "_FILTERED_METRICS.items",
+      "_as_array",
+      "_filter_known_array",
+      "configure_model_storage",
+      "dict",
+      "float",
+      "len",
+      "log.info",
+      "log.warning",
+      "mr.get_metric",
+      "pipeline"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/signal.py",
+    "line": 34,
+    "name": "_ema",
+    "arguments": "series: list[float], span: int",
+    "returns": "float",
+    "purpose": "EMA（span 对应 α=2/(span+1)），空序列返回 0。",
+    "calls": [
+      "float"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/signal.py",
+    "line": 45,
+    "name": "_safe_growth",
+    "arguments": "current: float, previous: float",
+    "returns": "float",
+    "purpose": "No docstring",
+    "calls": [
+      "math.log1p",
+      "max"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/signal.py",
+    "line": 49,
+    "name": "_robust_normalize",
+    "arguments": "values: dict[str, float]",
+    "returns": "dict[str, float]",
+    "purpose": "Median/IQR + sigmoid 缩放到 [0,1]（忠实自她 scoring.py，对离群值鲁棒）。",
+    "calls": [
+      "len",
+      "math.exp",
+      "math.isclose",
+      "max",
+      "min",
+      "sorted",
+      "values.items",
+      "values.values"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/signal.py",
+    "line": 79,
+    "name": "concept_share_momentum",
+    "arguments": "df: pd.DataFrame, *, laplace: float=1.0, ema_short_span: int=3, ema_long_span: int=6, min_months: int=3, weights: dict[str, float] | None=None",
+    "returns": "dict[str, float]",
+    "purpose": "Concept 级「相对份额 + EMA/MACD 动量」打分。",
+    "calls": [
+      "ValueError",
+      "_ema",
+      "_robust_normalize",
+      "_safe_growth",
+      "df.loc[cid].to_numpy",
+      "df.sum",
+      "features.items",
+      "features['ema_short'].keys",
+      "float",
+      "len",
+      "list",
+      "range",
+      "statistics.stdev",
+      "str",
+      "sum",
+      "totals.to_numpy",
+      "weights.values",
+      "zip"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/signal.py",
+    "line": 163,
+    "name": "share_momentum_rank",
+    "arguments": "df: pd.DataFrame, top_k: int, *, weights: dict[str, float] | None=None",
+    "returns": "list[str]",
+    "purpose": "按相对份额动量降序取 top-k concept ID（与 `kleinberg.detect_top_bursts` 同构）。",
+    "calls": [
+      "concept_share_momentum",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/temporal.py",
+    "line": 38,
+    "name": "project_t2t",
+    "arguments": "triples: Iterable[dict], relation: str='relates_to', min_cooccur: int=2, max_entities: int=5000, doc_types: Iterable[str] | None=None, max_time: str | None=None",
+    "returns": "list[dict]",
+    "purpose": "doc→Concept 三元组 → Concept×Concept 共现事实流。",
+    "calls": [
+      "Counter",
+      "combinations",
+      "d['concepts'].add",
+      "defaultdict",
+      "degree.items",
+      "doc_concepts.values",
+      "facts.append",
+      "len",
+      "log.info",
+      "log.warning",
+      "pair_count.items",
+      "set",
+      "sorted",
+      "t.get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/temporal.py",
+    "line": 126,
+    "name": "fit_graph_scope",
+    "arguments": "train: list[dict], *, min_support: int=1, max_entities: int=0",
+    "returns": "dict",
+    "purpose": "Fit support and entity limits on past facts only; never inspect held-out facts.",
+    "calls": [
+      "Counter",
+      "counts.items",
+      "max",
+      "set",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/temporal.py",
+    "line": 146,
+    "name": "apply_graph_scope",
+    "arguments": "facts: list[dict], scope: dict, *, training: bool=False",
+    "returns": "list[dict]",
+    "purpose": "Apply frozen training selection; new known-entity links are kept in test.",
+    "calls": []
+  },
+  {
+    "file": "techtrend/prediction/temporal.py",
+    "line": 154,
+    "name": "load_directed_edges",
+    "arguments": "triples: Iterable[dict], relations: Iterable[str] | None=None, min_support: int=2, max_time: str | None=None",
+    "returns": "list[dict]",
+    "purpose": "从 triples.jsonl 过滤定向 tech→tech 事实流（P3.5 优化边源）。",
+    "calls": [
+      "defaultdict",
+      "edge_times.items",
+      "edge_times[h, relation, tl].append",
+      "facts.append",
+      "len",
+      "log.info",
+      "set",
+      "sorted",
+      "t.get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/temporal.py",
+    "line": 206,
+    "name": "temporal_split_3way",
+    "arguments": "triples: list[dict], train_ratio: float=0.7, val_ratio: float=0.1",
+    "returns": "tuple[list[dict], list[dict], list[dict]]",
+    "purpose": "按 time 升序切 train/val/test 三段，时间不重叠（禁止 shuffle）。",
+    "calls": [
+      "_cut",
+      "enumerate",
+      "groups.append",
+      "int",
+      "len",
+      "log.info",
+      "max",
+      "sorted",
+      "sum",
+      "t.get"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/temporal.py",
+    "line": 237,
+    "name": "temporal_split_3way._cut",
+    "arguments": "threshold: int",
+    "returns": "int",
+    "purpose": "返回 [0, threshold) 事实对应的时间组数（整组归属，不跨时间戳）。",
+    "calls": [
+      "enumerate",
+      "len"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/temporal.py",
+    "line": 262,
+    "name": "encode_entities",
+    "arguments": "triples: Iterable[dict]",
+    "returns": "tuple[dict[int, str], dict[str, int]]",
+    "purpose": "实体 → 连续 id（供 torch 索引）。返回 (id2e, e2id)。",
+    "calls": [
+      "enumerate",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/tlogic.py",
+    "line": 27,
+    "name": "mine_rules",
+    "arguments": "train: list[dict], min_support: int=5, min_confidence: float=0.3, max_len: int=3",
+    "returns": "list[dict]",
+    "purpose": "挖掘时序规则，返回 [{\"label\",\"body\",\"head\",\"support\",\"confidence\",\"len\"}]。",
+    "calls": [
+      "body_pairs.add",
+      "defaultdict",
+      "edge_time.get",
+      "edge_time.items",
+      "inn[tl][r].get",
+      "inn[y].get",
+      "len",
+      "log.info",
+      "out[h][r].get",
+      "out[y].get",
+      "r['label'].startswith",
+      "round",
+      "rules.append",
+      "set",
+      "sorted",
+      "sum",
+      "supported.add",
+      "t.get",
+      "x_nbrs.items",
+      "z_nbrs.items"
+    ]
+  },
+  {
+    "file": "techtrend/prediction/tlogic.py",
+    "line": 130,
+    "name": "score_candidates",
+    "arguments": "s: str, r: str, rules: list[dict], graph: dict, t: str",
+    "returns": "dict[str, float]",
+    "purpose": "对查询 (s, r, ?, t) 沿规则做带时间约束的图游走，匹配规则置信度之和为候选分。",
+    "calls": [
+      "defaultdict",
+      "dict",
+      "edges.items",
+      "float",
+      "graph.get",
+      "graph.get('out', {}).items",
+      "incoming[s][r].items",
+      "len",
+      "neighbors.items",
+      "out[middle][second_relation].items",
+      "out[s][implication[1]].items",
+      "out[s][r].items",
+      "re.fullmatch",
+      "rule.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/agents/base_agent.py",
+    "line": 14,
+    "name": "BaseAgent.run",
+    "arguments": "self",
+    "returns": "AgentResult",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/agents/data_analysis_agent.py",
+    "line": 49,
+    "name": "DataAnalysisAgent.__init__",
+    "arguments": "self, cfg: PipelineConfig",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/agents/data_analysis_agent.py",
+    "line": 52,
+    "name": "DataAnalysisAgent._load_github_signals",
+    "arguments": "self",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "Load latest github_signals_YYYY-MM-DD.jsonl snapshot as a list.",
+    "calls": [
+      "interim.exists",
+      "interim.glob",
+      "json.loads",
+      "line.strip",
+      "open",
+      "signals.append",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/signal/agents/data_analysis_agent.py",
+    "line": 75,
+    "name": "DataAnalysisAgent._extend_pivot_with_github",
+    "arguments": "self, pivot: list[dict[str, Any]], gh_signals: list[dict[str, Any]]",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "Add github_* columns to pivot table.",
+    "calls": [
+      "gh_by_topic_month.get",
+      "gh_by_topic_month.setdefault",
+      "gh_by_topic_month.setdefault((tid, month), []).append",
+      "row.get",
+      "s.get",
+      "sig.get",
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/signal/agents/data_analysis_agent.py",
+    "line": 114,
+    "name": "DataAnalysisAgent.run",
+    "arguments": "self",
+    "returns": "AgentResult",
+    "purpose": "No docstring",
+    "calls": [
+      "AgentResult",
+      "arxiv_path.exists",
+      "check_data_quality",
+      "clean_records",
+      "create_pivot_table",
+      "crossref_path.exists",
+      "fill_missing_windows",
+      "filter_anomalous_pivot_rows",
+      "gdelt_path.exists",
+      "generate_monthly_windows",
+      "github_path.exists",
+      "len",
+      "load_jsonl",
+      "merge_records_by_source",
+      "openalex_path.exists",
+      "pd.DataFrame",
+      "pivot_df.to_dict",
+      "r.get",
+      "save_cleaning_log",
+      "save_quality_report",
+      "save_records_to_jsonl",
+      "self._extend_pivot_with_github",
+      "self._load_github_signals",
+      "smooth_signal",
+      "standardize_pivot",
+      "str",
+      "summarize_anomalies",
+      "tag_anomalies_in_pivot",
+      "uspto_path.exists"
+    ]
+  },
+  {
+    "file": "techtrend/signal/agents/data_collection_agent.py",
+    "line": 39,
+    "name": "DataCollectionAgent.__init__",
+    "arguments": "self, cfg: PipelineConfig, opts: AgentOptions",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/agents/data_collection_agent.py",
+    "line": 43,
+    "name": "DataCollectionAgent._load_sources_cfg",
+    "arguments": "self",
+    "returns": "dict[str, Any]",
+    "purpose": "No docstring",
+    "calls": [
+      "open",
+      "yaml.safe_load"
+    ]
+  },
+  {
+    "file": "techtrend/signal/agents/data_collection_agent.py",
+    "line": 47,
+    "name": "DataCollectionAgent.run",
+    "arguments": "self",
+    "returns": "AgentResult",
+    "purpose": "No docstring",
+    "calls": [
+      "AgentResult",
+      "asyncio.run",
+      "collector.collect",
+      "collector_cls",
+      "ensure_dirs",
+      "get_collector",
+      "json.dump",
+      "len",
+      "list",
+      "open",
+      "out.parent.mkdir",
+      "print",
+      "r.get",
+      "raw_cfg.get",
+      "rec.get",
+      "records_by_source.items",
+      "registered_sources.keys",
+      "save_records_to_jsonl",
+      "self._load_sources_cfg",
+      "source_cfg.get",
+      "sources_cfg.items",
+      "src_entry.setdefault",
+      "src_entry.setdefault('errors', []).append",
+      "str",
+      "sum",
+      "time.strftime",
+      "topic_summary.values",
+      "topic_summary[tid]['sources'].setdefault"
+    ]
+  },
+  {
+    "file": "techtrend/signal/agents/reporting_agent.py",
+    "line": 16,
+    "name": "ReportingAgent.__init__",
+    "arguments": "self, cfg: PipelineConfig",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": [
+      "load_dotenv"
+    ]
+  },
+  {
+    "file": "techtrend/signal/agents/reporting_agent.py",
+    "line": 25,
+    "name": "ReportingAgent._call_deepseek",
+    "arguments": "self, prompt: str",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "PoliteApiClient",
+      "client.post_json",
+      "os.getenv",
+      "response.payload.get",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/signal/agents/reporting_agent.py",
+    "line": 72,
+    "name": "ReportingAgent.run",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "Execute the reporting agent logic.",
+    "calls": [
+      "asyncio.run",
+      "f.write",
+      "json.dumps",
+      "json.load",
+      "open",
+      "print",
+      "self._call_deepseek",
+      "self.backtest_path.exists",
+      "self.ranking_path.exists",
+      "self.report_path.parent.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/signal/cloud_storage.py",
+    "line": 28,
+    "name": "_load_env",
+    "arguments": "",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "env_path.exists",
+      "load_dotenv"
+    ]
+  },
+  {
+    "file": "techtrend/signal/cloud_storage.py",
+    "line": 34,
+    "name": "load_cloud_storage_config",
+    "arguments": "config_path: Path | None=None",
+    "returns": "dict[str, Any]",
+    "purpose": "Load the ``huawei_obs`` section of ``cloud_storage.yaml``.",
+    "calls": [
+      "open",
+      "path.exists",
+      "raw.get",
+      "yaml.safe_load"
+    ]
+  },
+  {
+    "file": "techtrend/signal/cloud_storage.py",
+    "line": 48,
+    "name": "_get_client",
+    "arguments": "obs_cfg: dict[str, Any]",
+    "returns": "unspecified",
+    "purpose": "Build an authenticated ``ObsClient``. Raises if credentials are missing.",
+    "calls": [
+      "ObsClient",
+      "RuntimeError",
+      "_load_env",
+      "obs_cfg.get",
+      "os.environ.get",
+      "os.environ.get(ak_env, '').strip",
+      "os.environ.get(sk_env, '').strip"
+    ]
+  },
+  {
+    "file": "techtrend/signal/cloud_storage.py",
+    "line": 69,
+    "name": "upload_file",
+    "arguments": "local_path: Path, remote_key: str, obs_cfg: dict[str, Any] | None=None",
+    "returns": "None",
+    "purpose": "Upload one local file to OBS under ``remote_key``.",
+    "calls": [
+      "RuntimeError",
+      "_get_client",
+      "client.close",
+      "client.putFile",
+      "load_cloud_storage_config",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/signal/cloud_storage.py",
+    "line": 84,
+    "name": "download_file",
+    "arguments": "remote_key: str, local_path: Path, obs_cfg: dict[str, Any] | None=None",
+    "returns": "None",
+    "purpose": "Download one OBS object to ``local_path``.",
+    "calls": [
+      "RuntimeError",
+      "_get_client",
+      "client.close",
+      "client.getObject",
+      "load_cloud_storage_config",
+      "local_path.parent.mkdir",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/signal/cloud_storage.py",
+    "line": 100,
+    "name": "list_remote_objects",
+    "arguments": "prefix: str, obs_cfg: dict[str, Any] | None=None",
+    "returns": "list[str]",
+    "purpose": "List object keys under ``prefix`` in the configured bucket.",
+    "calls": [
+      "RuntimeError",
+      "_get_client",
+      "client.close",
+      "client.listObjects",
+      "load_cloud_storage_config"
+    ]
+  },
+  {
+    "file": "techtrend/signal/cloud_storage.py",
+    "line": 113,
+    "name": "sync_processed_data",
+    "arguments": "pipeline_cfg: PipelineConfig, obs_cfg: dict[str, Any] | None=None",
+    "returns": "list[str]",
+    "purpose": "Upload every file under each enabled ``sync_targets`` local layer to OBS.",
+    "calls": [
+      "cfg.get",
+      "file_path.is_file",
+      "file_path.relative_to",
+      "load_cloud_storage_config",
+      "local_layer_root.exists",
+      "local_layer_root.rglob",
+      "relative.as_posix",
+      "target.get",
+      "upload_file",
+      "uploaded.append"
+    ]
+  },
+  {
+    "file": "techtrend/signal/config.py",
+    "line": 48,
+    "name": "PipelineConfig.raw_api_path",
+    "arguments": "self",
+    "returns": "Path",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/config.py",
+    "line": 52,
+    "name": "PipelineConfig.interim_path",
+    "arguments": "self",
+    "returns": "Path",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/config.py",
+    "line": 56,
+    "name": "PipelineConfig.processed_path",
+    "arguments": "self",
+    "returns": "Path",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/config.py",
+    "line": 60,
+    "name": "PipelineConfig.reports_path",
+    "arguments": "self",
+    "returns": "Path",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/config.py",
+    "line": 64,
+    "name": "load_yaml_config",
+    "arguments": "path: Path",
+    "returns": "dict[str, Any]",
+    "purpose": "No docstring",
+    "calls": [
+      "open",
+      "yaml.safe_load"
+    ]
+  },
+  {
+    "file": "techtrend/signal/config.py",
+    "line": 69,
+    "name": "load_topics",
+    "arguments": "topics_path: Path",
+    "returns": "list[TopicConfig]",
+    "purpose": "No docstring",
+    "calls": [
+      "TopicConfig",
+      "item.get",
+      "load_yaml_config",
+      "raw.get",
+      "topics.append"
+    ]
+  },
+  {
+    "file": "techtrend/signal/config.py",
+    "line": 86,
+    "name": "load_pipeline_config",
+    "arguments": "config_path: Path | None=None, topics_path: Path | None=None",
+    "returns": "PipelineConfig",
+    "purpose": "No docstring",
+    "calls": [
+      "PipelineConfig",
+      "int",
+      "load_topics",
+      "load_yaml_config",
+      "raw.get",
+      "resolve_project_path",
+      "split.get",
+      "topics_path.exists"
+    ]
+  },
+  {
+    "file": "techtrend/signal/config.py",
+    "line": 119,
+    "name": "month_range",
+    "arguments": "window_start: str",
+    "returns": "tuple[str, str]",
+    "purpose": "Convert a YYYY-MM window start to (first_day, last_day) in YYYY-MM-DD.",
+    "calls": [
+      "datetime",
+      "int",
+      "window_start.split"
+    ]
+  },
+  {
+    "file": "techtrend/signal/config.py",
+    "line": 135,
+    "name": "generate_monthly_windows",
+    "arguments": "start: str, end: str",
+    "returns": "list[tuple[str, str]]",
+    "purpose": "Generate (window_start, window_end) pairs in YYYY-MM format.",
+    "calls": [
+      "current.replace",
+      "current.strftime",
+      "datetime.strptime",
+      "next_month.strftime",
+      "windows.append"
+    ]
+  },
+  {
+    "file": "techtrend/signal/config.py",
+    "line": 157,
+    "name": "ensure_dirs",
+    "arguments": "cfg: PipelineConfig",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "path.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/arxiv.py",
+    "line": 33,
+    "name": "_date_to_arxiv_format",
+    "arguments": "date_str: str",
+    "returns": "str",
+    "purpose": "Convert YYYY-MM-DD to arXiv datetime format YYYYMMDDHHMMSS.",
+    "calls": [
+      "date_str.replace",
+      "len"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/arxiv.py",
+    "line": 45,
+    "name": "_build_search_query",
+    "arguments": "topic_query: str, date_start: str, date_end: str",
+    "returns": "str",
+    "purpose": "Build arXiv search_query string with topic keywords and date range.",
+    "calls": [
+      "_date_to_arxiv_format"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/arxiv.py",
+    "line": 62,
+    "name": "_parse_total_results",
+    "arguments": "xml_text: str",
+    "returns": "int",
+    "purpose": "Extract <opensearch:totalResults> from arXiv Atom XML response.",
+    "calls": [
+      "ET.fromstring",
+      "int",
+      "root.find",
+      "root.iter"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/arxiv.py",
+    "line": 97,
+    "name": "ArxivCollector.collect",
+    "arguments": "self, cfg: PipelineConfig, http_settings: dict[str, Any], source_cfg: dict[str, Any]",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "No docstring",
+    "calls": [
+      "PoliteApiClient",
+      "_build_search_query",
+      "arxiv_settings.get",
+      "asyncio.gather",
+      "dict",
+      "float",
+      "generate_monthly_windows",
+      "max",
+      "month_range",
+      "records.extend",
+      "self._fetch_single",
+      "self._get_topic_query",
+      "tasks.append"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/arxiv.py",
+    "line": 135,
+    "name": "ArxivCollector._fetch_single",
+    "arguments": "self, client: PoliteApiClient, topic: Any, w_start: str, w_end: str, params: dict[str, Any], cache_key: str",
+    "returns": "dict[str, Any]",
+    "purpose": "No docstring",
+    "calls": [
+      "RuntimeError",
+      "_parse_total_results",
+      "client.get_json",
+      "isinstance",
+      "self._failed_record"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/arxiv.py",
+    "line": 161,
+    "name": "ArxivCollector._get_topic_query",
+    "arguments": "self, topic: Any",
+    "returns": "str",
+    "purpose": "Pick the right query string from the topic config.",
+    "calls": [
+      "getattr"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/arxiv.py",
+    "line": 166,
+    "name": "ArxivCollector._failed_record",
+    "arguments": "self, topic: Any, w_start: str, w_end: str, exc: Exception",
+    "returns": "dict[str, Any]",
+    "purpose": "No docstring",
+    "calls": [
+      "datetime.utcnow",
+      "datetime.utcnow().isoformat",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 42,
+    "name": "SourceCollector.collect",
+    "arguments": "self, cfg: PipelineConfig, http_settings: dict[str, Any], source_cfg: dict[str, Any]",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 52,
+    "name": "register",
+    "arguments": "name: str",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 53,
+    "name": "register.decorator",
+    "arguments": "cls: type[SourceCollector]",
+    "returns": "type[SourceCollector]",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 58,
+    "name": "get_collector_class",
+    "arguments": "name: str",
+    "returns": "type[SourceCollector]",
+    "purpose": "No docstring",
+    "calls": [
+      "ValueError"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 69,
+    "name": "MonthCountCollector.collect",
+    "arguments": "self, cfg: PipelineConfig, http_settings: dict[str, Any], source_cfg: dict[str, Any]",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "No docstring",
+    "calls": [
+      "PoliteApiClient",
+      "asyncio.gather",
+      "generate_monthly_windows",
+      "month_range",
+      "records.extend",
+      "self._fetch_single",
+      "self.build_params",
+      "self.get_topic_query",
+      "self.resolve_contact",
+      "tasks.append"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 98,
+    "name": "MonthCountCollector._fetch_single",
+    "arguments": "self, client: PoliteApiClient, topic: Any, w_start: str, w_end: str, params: dict[str, Any], cache_key: str",
+    "returns": "dict[str, Any]",
+    "purpose": "No docstring",
+    "calls": [
+      "RuntimeError",
+      "client.get_json",
+      "isinstance",
+      "self._failed_record",
+      "self.parse_count"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 124,
+    "name": "MonthCountCollector.build_params",
+    "arguments": "self, query: str, date_start: str, date_end: str, contact: str",
+    "returns": "dict[str, Any]",
+    "purpose": "Assemble the API query parameters for one (topic, month) request.",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 128,
+    "name": "MonthCountCollector.parse_count",
+    "arguments": "self, response: CachedResponse",
+    "returns": "int",
+    "purpose": "Extract the activity count from a successful API response.",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 132,
+    "name": "MonthCountCollector.resolve_contact",
+    "arguments": "self, source_cfg: dict[str, Any]",
+    "returns": "str",
+    "purpose": "Return the polite-pool contact email (or empty string if N/A).",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 136,
+    "name": "MonthCountCollector.get_topic_query",
+    "arguments": "self, topic: Any",
+    "returns": "str",
+    "purpose": "Pick the right query string from the topic config. Default: openalex_query.",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/base.py",
+    "line": 142,
+    "name": "MonthCountCollector._failed_record",
+    "arguments": "self, topic: Any, w_start: str, w_end: str, exc: Exception",
+    "returns": "dict[str, Any]",
+    "purpose": "No docstring",
+    "calls": [
+      "datetime.utcnow",
+      "datetime.utcnow().isoformat",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/crossref.py",
+    "line": 30,
+    "name": "CrossrefCollector.build_params",
+    "arguments": "self, query: str, date_start: str, date_end: str, contact: str",
+    "returns": "dict[str, Any]",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/crossref.py",
+    "line": 38,
+    "name": "CrossrefCollector.parse_count",
+    "arguments": "self, response: CachedResponse",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "int",
+      "isinstance",
+      "message.get",
+      "response.payload.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/crossref.py",
+    "line": 42,
+    "name": "CrossrefCollector.resolve_contact",
+    "arguments": "self, source_cfg: dict[str, Any]",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "os.getenv",
+      "source_cfg.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/crossref.py",
+    "line": 46,
+    "name": "CrossrefCollector.get_topic_query",
+    "arguments": "self, topic: Any",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/gdelt.py",
+    "line": 30,
+    "name": "normalize_gdelt_query",
+    "arguments": "query: str",
+    "returns": "str",
+    "purpose": "Wrap top-level OR queries in parentheses.",
+    "calls": [
+      "enumerate",
+      "len",
+      "query.strip",
+      "stripped.endswith",
+      "stripped.startswith"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/gdelt.py",
+    "line": 61,
+    "name": "_parse_gdelt_datetime",
+    "arguments": "ym: str",
+    "returns": "str",
+    "purpose": "Convert YYYY-MM to GDELT datetime format YYYYMMDDHHMMSS.",
+    "calls": [
+      "ym.replace"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/gdelt.py",
+    "line": 66,
+    "name": "_extract_timeline",
+    "arguments": "payload: Any",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "Extract the data series from a GDELT timeline payload.",
+    "calls": [
+      "isinstance",
+      "payload.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/gdelt.py",
+    "line": 81,
+    "name": "_parse_timeline_entry",
+    "arguments": "entry: Any",
+    "returns": "tuple[str | None, int]",
+    "purpose": "Parse a timeline entry into (date_str, count).",
+    "calls": [
+      "entry.items",
+      "int",
+      "isinstance"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/gdelt.py",
+    "line": 93,
+    "name": "_gdelt_date_to_ym",
+    "arguments": "date_str: str",
+    "returns": "str | None",
+    "purpose": "Convert GDELT datetime string to YYYY-MM.",
+    "calls": [
+      "date_str.split",
+      "int",
+      "len"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/gdelt.py",
+    "line": 110,
+    "name": "_build_params",
+    "arguments": "query: str, date_start: str, date_end: str",
+    "returns": "dict[str, Any]",
+    "purpose": "No docstring",
+    "calls": [
+      "_parse_gdelt_datetime"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/gdelt.py",
+    "line": 124,
+    "name": "GdeltCollector.collect",
+    "arguments": "self, cfg: PipelineConfig, http_settings: dict[str, Any], source_cfg: dict[str, Any]",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "No docstring",
+    "calls": [
+      "PoliteApiClient",
+      "RuntimeError",
+      "_build_params",
+      "_extract_timeline",
+      "client.__aenter__",
+      "client.__aexit__",
+      "client.get_json",
+      "generate_monthly_windows",
+      "isinstance",
+      "monthly_counts.get",
+      "normalize_gdelt_query",
+      "records.append",
+      "records.extend",
+      "self._aggregate_monthly",
+      "self._failed_records"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/gdelt.py",
+    "line": 176,
+    "name": "GdeltCollector._aggregate_monthly",
+    "arguments": "timeline: list[dict[str, Any]]",
+    "returns": "dict[str, int]",
+    "purpose": "No docstring",
+    "calls": [
+      "_gdelt_date_to_ym",
+      "_parse_timeline_entry",
+      "monthly.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/gdelt.py",
+    "line": 187,
+    "name": "GdeltCollector._failed_records",
+    "arguments": "topic: Any, windows: list[tuple[str, str]], exc: Exception",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "One failed record per window so downstream coverage stats stay honest.",
+    "calls": [
+      "datetime.utcnow",
+      "datetime.utcnow().isoformat",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/github.py",
+    "line": 40,
+    "name": "_load_env",
+    "arguments": "attempt_root: Path",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "env_path.exists",
+      "load_dotenv"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/github.py",
+    "line": 46,
+    "name": "_github_headers",
+    "arguments": "",
+    "returns": "dict[str, str]",
+    "purpose": "Build GitHub auth headers (separate from the session User-Agent).",
+    "calls": [
+      "low.startswith",
+      "os.environ.get",
+      "os.environ.get('GITHUB_TOKEN', '').strip",
+      "token.lower"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/github.py",
+    "line": 58,
+    "name": "_day_str",
+    "arguments": "dt: datetime",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "dt.strftime"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/github.py",
+    "line": 62,
+    "name": "_iso_to_dt",
+    "arguments": "s: str",
+    "returns": "datetime",
+    "purpose": "No docstring",
+    "calls": [
+      "datetime.strptime",
+      "datetime.strptime(s, '%Y-%m-%dT%H:%M:%SZ').replace"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/github.py",
+    "line": 66,
+    "name": "_extract_minimal_repo",
+    "arguments": "item: dict[str, Any], topic_id: str='', topic_label: str=''",
+    "returns": "dict[str, Any]",
+    "purpose": "No docstring",
+    "calls": [
+      "isinstance",
+      "item.get",
+      "license_info.get",
+      "owner.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/github.py",
+    "line": 93,
+    "name": "_write_jsonl",
+    "arguments": "path: Path, rows: Iterable[dict[str, Any]]",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "f.write",
+      "json.dumps",
+      "open"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/github.py",
+    "line": 106,
+    "name": "GithubCollector.collect",
+    "arguments": "self, cfg: PipelineConfig, http_settings: dict[str, Any], source_cfg: dict[str, Any]",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "No docstring",
+    "calls": [
+      "PoliteApiClient",
+      "_day_str",
+      "_extract_minimal_repo",
+      "_github_headers",
+      "_iso_to_dt",
+      "_load_env",
+      "_write_jsonl",
+      "all_repos.extend",
+      "all_signals.extend",
+      "client.__aenter__",
+      "client.__aexit__",
+      "client.get_json",
+      "datetime.now",
+      "dict",
+      "fetch_errors.append",
+      "fetch_errors.extend",
+      "float",
+      "gh_settings.get",
+      "int",
+      "interim_dir.mkdir",
+      "isinstance",
+      "len",
+      "list",
+      "max",
+      "min",
+      "now.isoformat",
+      "os.environ.get",
+      "r.get",
+      "raw_cache_dir.mkdir",
+      "rec.get",
+      "records.append",
+      "response.payload.get",
+      "round",
+      "seen.values",
+      "seen[rid].get",
+      "source_cfg.get",
+      "sum",
+      "timedelta",
+      "topic_fetch_errors.append",
+      "topic_repos.append",
+      "topic_signals.append"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/uspto.py",
+    "line": 42,
+    "name": "_build_odp_params",
+    "arguments": "query: str, date_start: str, date_end: str",
+    "returns": "dict[str, str]",
+    "purpose": "Build ODP API query parameters.",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/uspto.py",
+    "line": 53,
+    "name": "_build_patentsearch_body",
+    "arguments": "query: str, date_start: str, date_end: str",
+    "returns": "dict[str, Any]",
+    "purpose": "Build PatentSearch API request body.",
+    "calls": []
+  },
+  {
+    "file": "techtrend/signal/data_collectors/uspto.py",
+    "line": 65,
+    "name": "_parse_odp_count",
+    "arguments": "response: CachedResponse",
+    "returns": "int",
+    "purpose": "Extract total count from ODP API response.",
+    "calls": [
+      "int",
+      "isinstance",
+      "query_status.get",
+      "response.payload.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/uspto.py",
+    "line": 73,
+    "name": "_parse_patentsearch_count",
+    "arguments": "response: CachedResponse",
+    "returns": "int",
+    "purpose": "Extract total count from PatentSearch API response.",
+    "calls": [
+      "int",
+      "isinstance",
+      "response.payload.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/uspto.py",
+    "line": 86,
+    "name": "UsptoCollector.collect",
+    "arguments": "self, cfg: PipelineConfig, http_settings: dict[str, Any], source_cfg: dict[str, Any]",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "No docstring",
+    "calls": [
+      "PoliteApiClient",
+      "RuntimeError",
+      "_build_odp_params",
+      "_build_patentsearch_body",
+      "client.__aenter__",
+      "client.__aexit__",
+      "client.get_json",
+      "client.post_json",
+      "dict",
+      "float",
+      "generate_monthly_windows",
+      "isinstance",
+      "max",
+      "month_range",
+      "os.getenv",
+      "parse_count",
+      "records.append",
+      "self._all_failed_records",
+      "self._failed_record",
+      "self._get_topic_query",
+      "source_cfg.get",
+      "uspto_settings.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/uspto.py",
+    "line": 175,
+    "name": "UsptoCollector._get_topic_query",
+    "arguments": "self, topic: Any",
+    "returns": "str",
+    "purpose": "Pick the right query string from the topic config.",
+    "calls": [
+      "getattr"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/uspto.py",
+    "line": 179,
+    "name": "UsptoCollector._failed_record",
+    "arguments": "self, topic: Any, w_start: str, w_end: str, exc: Exception",
+    "returns": "dict[str, Any]",
+    "purpose": "No docstring",
+    "calls": [
+      "datetime.utcnow",
+      "datetime.utcnow().isoformat",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/signal/data_collectors/uspto.py",
+    "line": 194,
+    "name": "UsptoCollector._all_failed_records",
+    "arguments": "self, cfg: PipelineConfig, windows: list[tuple[str, str]], error_msg: str",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "Generate failed records for all windows when API key is missing.",
+    "calls": [
+      "datetime.utcnow",
+      "datetime.utcnow().isoformat",
+      "records.append"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 33,
+    "name": "RateLimitedError.__init__",
+    "arguments": "self, message: str, *, retry_after_seconds: float | None=None",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "super",
+      "super().__init__"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 68,
+    "name": "PoliteApiClient.__init__",
+    "arguments": "self, cache_dir: str | Path, settings: dict[str, Any] | None=None",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "Path",
+      "asyncio.Lock",
+      "dict",
+      "merged.get",
+      "merged.update",
+      "os.getenv",
+      "self.cache_dir.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 90,
+    "name": "PoliteApiClient.__aenter__",
+    "arguments": "self",
+    "returns": "PoliteApiClient",
+    "purpose": "No docstring",
+    "calls": [
+      "aiohttp.ClientSession",
+      "aiosqlite.connect",
+      "self.db.commit",
+      "self.db.execute"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 106,
+    "name": "PoliteApiClient.__aexit__",
+    "arguments": "self, exc_type, exc_val, exc_tb",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.db.close",
+      "self.session.close"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 112,
+    "name": "PoliteApiClient._get_from_cache",
+    "arguments": "self, cache_key: str, as_of: str | None=None",
+    "returns": "CachedResponse | None",
+    "purpose": "No docstring",
+    "calls": [
+      "CachedResponse",
+      "cursor.fetchone",
+      "data.setdefault",
+      "json.load",
+      "json.loads",
+      "json_path.exists",
+      "json_path.open",
+      "params.append",
+      "self._save_to_cache",
+      "self.db.execute",
+      "tuple"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 147,
+    "name": "PoliteApiClient._save_to_cache",
+    "arguments": "self, cache_key: str, response: CachedResponse",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "asdict",
+      "asdict(response).items",
+      "datetime.now",
+      "datetime.now(UTC).isoformat",
+      "json.dumps",
+      "self.db.commit",
+      "self.db.execute"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 158,
+    "name": "PoliteApiClient.get_json",
+    "arguments": "self, url: str, params: dict[str, Any], *, cache_key: str, as_of: str | None=None, extra_headers: dict[str, str] | None=None",
+    "returns": "CachedResponse",
+    "purpose": "No docstring",
+    "calls": [
+      "CachedResponse",
+      "RateLimitedError",
+      "RuntimeError",
+      "aiohttp.ClientTimeout",
+      "datetime.now",
+      "datetime.now(UTC).isoformat",
+      "float",
+      "headers.update",
+      "int",
+      "k.lower",
+      "range",
+      "response.headers.get",
+      "response.headers.items",
+      "response.json",
+      "response.raise_for_status",
+      "response.text",
+      "self._backoff",
+      "self._cache_name",
+      "self._get_from_cache",
+      "self._log_attempt",
+      "self._redact_url",
+      "self._retry_after_seconds",
+      "self._save_to_cache",
+      "self._wait_for_spacing",
+      "self.session.get",
+      "self.settings.get",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 229,
+    "name": "PoliteApiClient.post_json",
+    "arguments": "self, url: str, body: dict[str, Any], *, cache_key: str, as_of: str | None=None, extra_headers: dict[str, str] | None=None",
+    "returns": "CachedResponse",
+    "purpose": "No docstring",
+    "calls": [
+      "CachedResponse",
+      "RateLimitedError",
+      "RuntimeError",
+      "aiohttp.ClientTimeout",
+      "datetime.now",
+      "datetime.now(UTC).isoformat",
+      "float",
+      "headers.update",
+      "int",
+      "k.lower",
+      "range",
+      "response.headers.get",
+      "response.headers.items",
+      "response.json",
+      "response.raise_for_status",
+      "response.text",
+      "self._backoff",
+      "self._cache_name",
+      "self._get_from_cache",
+      "self._log_attempt",
+      "self._redact_url",
+      "self._retry_after_seconds",
+      "self._save_to_cache",
+      "self._wait_for_spacing",
+      "self.session.post",
+      "self.settings.get",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 299,
+    "name": "PoliteApiClient._wait_for_spacing",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "asyncio.sleep",
+      "float",
+      "time.monotonic"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 307,
+    "name": "PoliteApiClient._backoff",
+    "arguments": "self, attempt: int, retry_after: str | None",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "asyncio.sleep",
+      "float",
+      "min",
+      "random.uniform",
+      "self.settings.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 320,
+    "name": "PoliteApiClient._retry_after_seconds",
+    "arguments": "value: str | None",
+    "returns": "float | None",
+    "purpose": "No docstring",
+    "calls": [
+      "float",
+      "max"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 328,
+    "name": "PoliteApiClient._log_attempt",
+    "arguments": "self, url: str, status_code: int | None, attempt: int, event: str",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "datetime.now",
+      "datetime.now(UTC).isoformat",
+      "handle.write",
+      "json.dump",
+      "self._redact_url",
+      "self.request_log_path.open"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 341,
+    "name": "PoliteApiClient._redact_url",
+    "arguments": "url: str",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "key.lower",
+      "parse_qsl",
+      "safe_query.append",
+      "urlencode",
+      "urlsplit",
+      "urlunsplit"
+    ]
+  },
+  {
+    "file": "techtrend/signal/http_client.py",
+    "line": 353,
+    "name": "PoliteApiClient._cache_name",
+    "arguments": "url: str, params: dict[str, Any], cache_key: str",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "hashlib.sha256",
+      "hashlib.sha256(query.encode('utf-8')).hexdigest",
+      "isinstance",
+      "json.dumps",
+      "query.encode"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/cleaner.py",
+    "line": 8,
+    "name": "filter_failed_records",
+    "arguments": "records: list[dict[str, Any]]",
+    "returns": "tuple[list[dict[str, Any]], list[dict[str, Any]]]",
+    "purpose": "No docstring",
+    "calls": [
+      "failed.append",
+      "ok.append",
+      "rec.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/cleaner.py",
+    "line": 21,
+    "name": "filter_anomalous_pivot_rows",
+    "arguments": "pivot: pd.DataFrame, source_columns: list[str] | None=None, drop_zscore: bool=False, drop_iqr: bool=False, drop_likely_api_failure: bool=True, drop_sudden_drop: bool=False",
+    "returns": "tuple[pd.DataFrame, dict[str, int]]",
+    "purpose": "No docstring",
+    "calls": [
+      "(pivot[cols] == 'likely_api_failure').all",
+      "(pivot[cols] == 'sudden_drop').all",
+      "c.endswith",
+      "drop_mask.sum",
+      "mask.sum",
+      "pd.Series",
+      "pivot[c].sum",
+      "pivot[cols].any",
+      "pivot[~drop_mask].copy"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/cleaner.py",
+    "line": 80,
+    "name": "fill_missing_windows",
+    "arguments": "pivot: pd.DataFrame, all_windows: list[str], source_columns: list[str] | None=None, strategy: str='zero_fill'",
+    "returns": "tuple[pd.DataFrame, dict[str, int]]",
+    "purpose": "No docstring",
+    "calls": [
+      "c.endswith",
+      "len",
+      "pd.MultiIndex.from_product",
+      "pivot.set_index",
+      "pivot['topic_id'].unique",
+      "pivot[['topic_id', 'topic_label']].drop_duplicates",
+      "pivot[['topic_id', 'topic_label']].drop_duplicates().set_index",
+      "pivot_indexed.reindex",
+      "pivot_reindexed.groupby",
+      "pivot_reindexed.groupby('topic_id')[col].ffill",
+      "pivot_reindexed.groupby('topic_id')[col].ffill().fillna",
+      "pivot_reindexed.index.get_level_values",
+      "pivot_reindexed.index.get_level_values('topic_id').map",
+      "pivot_reindexed.reset_index",
+      "pivot_reindexed[col].fillna",
+      "pivot_reindexed[source_columns[0]].isna"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/cleaner.py",
+    "line": 132,
+    "name": "smooth_signal",
+    "arguments": "pivot: pd.DataFrame, source_columns: list[str] | None=None, window_size: int=3, method: str='median'",
+    "returns": "pd.DataFrame",
+    "purpose": "No docstring",
+    "calls": [
+      "c.endswith",
+      "pivot.groupby",
+      "pivot.groupby('topic_id')[col].rolling",
+      "pivot.groupby('topic_id')[col].rolling(window=window_size, center=False, min_periods=1).mean",
+      "pivot.groupby('topic_id')[col].rolling(window=window_size, center=False, min_periods=1).median",
+      "pivot.sort_values",
+      "smoothed.reset_index",
+      "smoothed.reset_index(level=0, drop=True).round"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/cleaner.py",
+    "line": 159,
+    "name": "clean_records",
+    "arguments": "records: list[dict[str, Any]]",
+    "returns": "tuple[list[dict[str, Any]], dict[str, Any]]",
+    "purpose": "No docstring",
+    "calls": [
+      "filter_failed_records",
+      "len",
+      "log['failed_by_source'].get",
+      "rec.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/cleaner.py",
+    "line": 175,
+    "name": "save_cleaning_log",
+    "arguments": "log: dict[str, Any], path: Path",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "json.dump",
+      "open",
+      "path.parent.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/detector.py",
+    "line": 21,
+    "name": "_log1p_safe",
+    "arguments": "value: float",
+    "returns": "float",
+    "purpose": "Log1p that treats negatives as zero.",
+    "calls": [
+      "math.log1p",
+      "max"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/detector.py",
+    "line": 26,
+    "name": "detect_zscore_outliers",
+    "arguments": "values: list[float], threshold: float=3.0, window: int=6",
+    "returns": "list[bool]",
+    "purpose": "Flag values whose rolling z-score (on log1p transform) exceeds threshold.",
+    "calls": [
+      "_log1p_safe",
+      "abs",
+      "len",
+      "math.sqrt",
+      "max",
+      "range",
+      "sum"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/detector.py",
+    "line": 64,
+    "name": "detect_iqr_outliers",
+    "arguments": "values: list[float], k: float=1.5, window: int=6",
+    "returns": "list[bool]",
+    "purpose": "Flag values outside Q1 - k*IQR and Q3 + k*IQR based on a rolling window.",
+    "calls": [
+      "len",
+      "max",
+      "range",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/detector.py",
+    "line": 105,
+    "name": "detect_consecutive_zeros",
+    "arguments": "values: list[float], min_consecutive: int=3",
+    "returns": "list[str]",
+    "purpose": "Flag runs of consecutive zeros as likely API failures.",
+    "calls": [
+      "len",
+      "range"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/detector.py",
+    "line": 135,
+    "name": "detect_sudden_drop",
+    "arguments": "values: list[float], min_nonzero_before: int=3",
+    "returns": "list[str]",
+    "purpose": "Flag a sudden drop to zero after a sustained non-zero run.",
+    "calls": [
+      "len",
+      "range"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/detector.py",
+    "line": 161,
+    "name": "tag_anomalies_in_pivot",
+    "arguments": "pivot: list[dict[str, Any]], source_columns: list[str] | None=None, zscore_threshold: float=3.0, iqr_k: float=1.5, min_consecutive_zeros: int=3, min_nonzero_before_drop: int=3",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "Tag anomaly flags on each pivot row for each source column.",
+    "calls": [
+      "bool",
+      "by_topic.items",
+      "by_topic.setdefault",
+      "by_topic.setdefault(tid, []).append",
+      "c.endswith",
+      "detect_consecutive_zeros",
+      "detect_iqr_outliers",
+      "detect_sudden_drop",
+      "detect_zscore_outliers",
+      "enumerate",
+      "float",
+      "pivot[0].keys",
+      "row.get"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/detector.py",
+    "line": 220,
+    "name": "summarize_anomalies",
+    "arguments": "pivot: list[dict[str, Any]]",
+    "returns": "dict[str, Any]",
+    "purpose": "Produce a summary of detected anomalies for the quality report.",
+    "calls": [
+      "c.endswith",
+      "col.replace",
+      "pivot[0].keys",
+      "row.get",
+      "summary['by_source'].setdefault",
+      "summary['by_topic'].setdefault"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/json_utils.py",
+    "line": 5,
+    "name": "NumpyEncoder.default",
+    "arguments": "self, obj",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": [
+      "float",
+      "int",
+      "isinstance",
+      "obj.tolist",
+      "super",
+      "super(NumpyEncoder, self).default"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/normalize.py",
+    "line": 8,
+    "name": "save_records_to_jsonl",
+    "arguments": "records: list[dict[str, Any]], output_path: Path",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "f.write",
+      "json.dumps",
+      "len",
+      "open",
+      "output_path.parent.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/normalize.py",
+    "line": 20,
+    "name": "load_jsonl",
+    "arguments": "path: Path",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "No docstring",
+    "calls": [
+      "json.loads",
+      "line.strip",
+      "open",
+      "records.append"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/normalize.py",
+    "line": 30,
+    "name": "merge_records_by_source",
+    "arguments": "openalex_records: list[dict[str, Any]], gdelt_records: list[dict[str, Any]], crossref_records: list[dict[str, Any]] | None=None, github_records: list[dict[str, Any]] | None=None, arxiv_records: list[dict[str, Any]] | None=None, uspto_records: list[dict[str, Any]] | None=None",
+    "returns": "list[dict[str, Any]]",
+    "purpose": "No docstring",
+    "calls": [
+      "merged.sort"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/normalize.py",
+    "line": 51,
+    "name": "_safe_count",
+    "arguments": "value: Any",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "int"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/normalize.py",
+    "line": 60,
+    "name": "build_feature_matrix",
+    "arguments": "records: list[dict[str, Any]]",
+    "returns": "dict[str, list[dict[str, Any]]]",
+    "purpose": "No docstring",
+    "calls": [
+      "by_topic[tid].append",
+      "by_topic[tid].sort"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/normalize.py",
+    "line": 76,
+    "name": "create_pivot_table",
+    "arguments": "records: list[dict[str, Any]]",
+    "returns": "pd.DataFrame",
+    "purpose": "No docstring",
+    "calls": [
+      "df.pivot_table",
+      "df.pivot_table(index=['topic_id', 'topic_label', 'window_start', 'window_end'], columns='source', values='activity_count', aggfunc='sum', fill_value=0).reset_index",
+      "pd.DataFrame",
+      "pd.to_numeric",
+      "pd.to_numeric(df['activity_count'], errors='coerce').fillna",
+      "pivot.rename",
+      "pivot.sort_values"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/normalize.py",
+    "line": 112,
+    "name": "standardize_pivot",
+    "arguments": "pivot: pd.DataFrame, source_columns: list[str] | None=None, method: str='robust'",
+    "returns": "pd.DataFrame",
+    "purpose": "No docstring",
+    "calls": [
+      "((group - lo) / (hi - lo)).round",
+      "((group - median) / iqr).round",
+      "((log_vals - lo) / (hi - lo)).round",
+      "(ranks / (n - 1)).round",
+      "ValueError",
+      "c.endswith",
+      "group.max",
+      "group.median",
+      "group.min",
+      "group.quantile",
+      "group.rank",
+      "len",
+      "log_vals.max",
+      "log_vals.min",
+      "np.log1p",
+      "np.maximum",
+      "pd.Series",
+      "pivot.groupby",
+      "pivot.groupby('window_start')[col].transform"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/normalize.py",
+    "line": 125,
+    "name": "standardize_pivot._apply_method",
+    "arguments": "group: pd.Series",
+    "returns": "pd.Series",
+    "purpose": "No docstring",
+    "calls": [
+      "((group - lo) / (hi - lo)).round",
+      "((group - median) / iqr).round",
+      "((log_vals - lo) / (hi - lo)).round",
+      "(ranks / (n - 1)).round",
+      "ValueError",
+      "group.max",
+      "group.median",
+      "group.min",
+      "group.quantile",
+      "group.rank",
+      "len",
+      "log_vals.max",
+      "log_vals.min",
+      "np.log1p",
+      "np.maximum",
+      "pd.Series"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/quality_checker.py",
+    "line": 19,
+    "name": "check_data_quality",
+    "arguments": "pivot_records: list[dict[str, Any]]",
+    "returns": "dict[str, Any]",
+    "purpose": "Assess data completeness and quality.",
+    "calls": [
+      "any",
+      "by_topic.items",
+      "by_topic[tid].append",
+      "c.endswith",
+      "c.replace",
+      "col.replace",
+      "int",
+      "len",
+      "max",
+      "min",
+      "pivot_records[0].keys",
+      "r.get",
+      "rec.get",
+      "recs[0].get",
+      "report['by_topic'].values",
+      "report['issues'].append",
+      "sum",
+      "topic_entry.get",
+      "zip"
+    ]
+  },
+  {
+    "file": "techtrend/signal/processors/quality_checker.py",
+    "line": 121,
+    "name": "save_quality_report",
+    "arguments": "report: dict[str, Any], path: Path",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "json.dump",
+      "open",
+      "path.parent.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/sources/arxiv.py",
+    "line": 28,
+    "name": "_should_retry",
+    "arguments": "exc: BaseException",
+    "returns": "bool",
+    "purpose": "No docstring",
+    "calls": [
+      "isinstance"
+    ]
+  },
+  {
+    "file": "techtrend/sources/arxiv.py",
+    "line": 35,
+    "name": "ArxivClient.__init__",
+    "arguments": "self, per_page: int=100, timeout: float=30.0",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/arxiv.py",
+    "line": 45,
+    "name": "ArxivClient._get",
+    "arguments": "self, params: dict[str, Any]",
+    "returns": "bytes",
+    "purpose": "No docstring",
+    "calls": [
+      "resp.read",
+      "retry",
+      "retry_if_exception",
+      "stop_after_attempt",
+      "urllib.parse.urlencode",
+      "urllib.request.Request",
+      "urllib.request.urlopen",
+      "wait_exponential"
+    ]
+  },
+  {
+    "file": "techtrend/sources/arxiv.py",
+    "line": 54,
+    "name": "ArxivClient.fetch_works",
+    "arguments": "self, from_date: str | None, categories: list[str], max_records: int",
+    "returns": "list[dict]",
+    "purpose": "按分类拉取 Atom（submittedDate 降序），start/max_results 分页。",
+    "calls": [
+      "' OR '.join",
+      "feedparser.parse",
+      "len",
+      "log.info",
+      "min",
+      "rec.get",
+      "records.append",
+      "self._get",
+      "self.normalize",
+      "time.sleep"
+    ]
+  },
+  {
+    "file": "techtrend/sources/arxiv.py",
+    "line": 97,
+    "name": "ArxivClient.normalize",
+    "arguments": "entry: Any",
+    "returns": "dict",
+    "purpose": "Atom entry → 归一化行。abstract 为纯文本，可直接喂 LLM。",
+    "calls": [
+      "a.get",
+      "entry.get",
+      "entry.get('summary', '').strip",
+      "entry.get('title', '').strip",
+      "id_url.rsplit",
+      "id_url.split",
+      "id_url.split('/abs/')[-1].split",
+      "t.get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/arxiv.py",
+    "line": 121,
+    "name": "ArxivClient.close",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/arxiv.py",
+    "line": 125,
+    "name": "ArxivClient.__enter__",
+    "arguments": "self",
+    "returns": "'ArxivClient'",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/arxiv.py",
+    "line": 128,
+    "name": "ArxivClient.__exit__",
+    "arguments": "self, *exc: Any",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/crossref.py",
+    "line": 33,
+    "name": "_should_retry",
+    "arguments": "exc: BaseException",
+    "returns": "bool",
+    "purpose": "仅对限流/服务端错误/传输异常重试。",
+    "calls": [
+      "isinstance"
+    ]
+  },
+  {
+    "file": "techtrend/sources/crossref.py",
+    "line": 40,
+    "name": "_strip_tags",
+    "arguments": "text: str | None",
+    "returns": "str | None",
+    "purpose": "JATS/HTML 摘要还原为纯文本（CrossRef abstract 常为 JATS 片段）。",
+    "calls": [
+      "_TAG_RE.sub",
+      "html.unescape",
+      "re.sub",
+      "re.sub('\\\\s+', ' ', plain).strip"
+    ]
+  },
+  {
+    "file": "techtrend/sources/crossref.py",
+    "line": 48,
+    "name": "_date_from_parts",
+    "arguments": "obj: dict | None",
+    "returns": "str | None",
+    "purpose": "CrossRef 日期（date-parts [[Y,M,D]]）→ 'YYYY-MM-DD'（缺位则截短）。",
+    "calls": [
+      "len",
+      "obj.get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/crossref.py",
+    "line": 69,
+    "name": "CrossrefClient.__init__",
+    "arguments": "self, mailto: str | None=None, per_page: int=100, timeout: float=30.0",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "httpx.Client",
+      "min"
+    ]
+  },
+  {
+    "file": "techtrend/sources/crossref.py",
+    "line": 86,
+    "name": "CrossrefClient._get_page",
+    "arguments": "self, params: dict[str, Any]",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "resp.json",
+      "resp.raise_for_status",
+      "retry",
+      "retry_if_exception",
+      "self.client.get",
+      "stop_after_attempt",
+      "wait_exponential"
+    ]
+  },
+  {
+    "file": "techtrend/sources/crossref.py",
+    "line": 92,
+    "name": "CrossrefClient.fetch_works",
+    "arguments": "self, from_date: str | None, concept_ids: list[str] | None, max_works: int",
+    "returns": "list[dict]",
+    "purpose": "按 `from-pub-date` 游标分页拉取 works，直到末页或达 max_works。",
+    "calls": [
+      "data.get",
+      "len",
+      "log.info",
+      "message.get",
+      "params.get",
+      "self._get_page",
+      "works.extend"
+    ]
+  },
+  {
+    "file": "techtrend/sources/crossref.py",
+    "line": 132,
+    "name": "CrossrefClient.normalize",
+    "arguments": "work: dict",
+    "returns": "dict",
+    "purpose": "CrossRef item → 归一化 work 行（与 OpenAlex `normalize` 同 schema）。",
+    "calls": [
+      "' '.join",
+      "' '.join((p for p in (a.get('given'), a.get('family')) if p)).strip",
+      "(work.get('DOI') or '').strip",
+      "_date_from_parts",
+      "_strip_tags",
+      "a.get",
+      "doi.lower",
+      "r.get",
+      "work.get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/crossref.py",
+    "line": 170,
+    "name": "CrossrefClient.close",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.client.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/crossref.py",
+    "line": 173,
+    "name": "CrossrefClient.__enter__",
+    "arguments": "self",
+    "returns": "'CrossrefClient'",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/crossref.py",
+    "line": 176,
+    "name": "CrossrefClient.__exit__",
+    "arguments": "self, *exc: Any",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 33,
+    "name": "_split_v2_field",
+    "arguments": "value: str",
+    "returns": "list[str]",
+    "purpose": "解析 GKG V2 字段 `name,count;name,count;...` → 去重后的名字列表（保序）。",
+    "calls": [
+      "entry.split",
+      "entry.split(',', 1)[0].strip",
+      "out.append",
+      "seen.add",
+      "set",
+      "value.split"
+    ]
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 45,
+    "name": "_should_retry",
+    "arguments": "exc: BaseException",
+    "returns": "bool",
+    "purpose": "No docstring",
+    "calls": [
+      "isinstance"
+    ]
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 51,
+    "name": "_day_files",
+    "arguments": "from_date: str | None, days_back: int=1",
+    "returns": "list[str]",
+    "purpose": "返回需下载的日文件时间戳（YYYYMMDDHHMMSS），默认最近 days_back 天。",
+    "calls": [
+      "d.strftime",
+      "datetime.now",
+      "datetime.now().date",
+      "datetime.strptime",
+      "datetime.strptime(from_date, '%Y-%m-%d').date",
+      "stamps.append",
+      "timedelta"
+    ]
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 68,
+    "name": "GdeltClient.__init__",
+    "arguments": "self, timeout: float=60.0",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "httpx.Client"
+    ]
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 77,
+    "name": "GdeltClient._download",
+    "arguments": "self, stamp: str",
+    "returns": "bytes",
+    "purpose": "No docstring",
+    "calls": [
+      "resp.raise_for_status",
+      "retry",
+      "retry_if_exception",
+      "self.client.get",
+      "stop_after_attempt",
+      "wait_exponential"
+    ]
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 84,
+    "name": "GdeltClient.fetch_news",
+    "arguments": "self, from_date: str | None, theme_filter: list[str], max_records: int",
+    "returns": "list[dict]",
+    "purpose": "按日下载 GKG，主题过滤 + max_records 截断。",
+    "calls": [
+      "_day_files",
+      "len",
+      "log.info",
+      "log.warning",
+      "records.extend",
+      "self._download",
+      "self._parse_zip",
+      "t.strip"
+    ]
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 106,
+    "name": "GdeltClient._parse_zip",
+    "arguments": "self, content: bytes, themes: set[str], limit: int",
+    "returns": "list[dict]",
+    "purpose": "解压 zip，流式读 CSV，按主题过滤后截断。",
+    "calls": [
+      "csv.reader",
+      "io.BytesIO",
+      "io.TextIOWrapper",
+      "len",
+      "out.append",
+      "self.normalize",
+      "set",
+      "zf.namelist",
+      "zf.open",
+      "zipfile.ZipFile"
+    ]
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 128,
+    "name": "GdeltClient.normalize",
+    "arguments": "row: list[str]",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "' '.join",
+      "', '.join",
+      "_split_v2_field",
+      "float",
+      "len",
+      "row[_COL_TONE].split"
+    ]
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 159,
+    "name": "GdeltClient.close",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.client.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 162,
+    "name": "GdeltClient.__enter__",
+    "arguments": "self",
+    "returns": "'GdeltClient'",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/gdelt.py",
+    "line": 165,
+    "name": "GdeltClient.__exit__",
+    "arguments": "self, *exc: Any",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/github.py",
+    "line": 18,
+    "name": "_should_retry",
+    "arguments": "exc: BaseException",
+    "returns": "bool",
+    "purpose": "No docstring",
+    "calls": [
+      "isinstance"
+    ]
+  },
+  {
+    "file": "techtrend/sources/github.py",
+    "line": 25,
+    "name": "GithubClient.__init__",
+    "arguments": "self, token: str | None=None, timeout: float=30.0",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "httpx.Client"
+    ]
+  },
+  {
+    "file": "techtrend/sources/github.py",
+    "line": 40,
+    "name": "GithubClient._search",
+    "arguments": "self, params: dict[str, Any]",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "resp.json",
+      "resp.raise_for_status",
+      "retry",
+      "retry_if_exception",
+      "self.client.get",
+      "stop_after_attempt",
+      "wait_exponential"
+    ]
+  },
+  {
+    "file": "techtrend/sources/github.py",
+    "line": 46,
+    "name": "GithubClient.fetch_repos",
+    "arguments": "self, from_date: str | None, topics: list[str], min_stars: int, max_repos: int",
+    "returns": "list[dict]",
+    "purpose": "按 created/star/topic 过滤拉取仓库，分页至 max_repos。",
+    "calls": [
+      "data.get",
+      "len",
+      "log.info",
+      "min",
+      "repos.append",
+      "seen.add",
+      "self._search",
+      "self.normalize",
+      "set"
+    ]
+  },
+  {
+    "file": "techtrend/sources/github.py",
+    "line": 90,
+    "name": "GithubClient.normalize",
+    "arguments": "repo: dict",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "repo.get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/github.py",
+    "line": 103,
+    "name": "GithubClient.close",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.client.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/github.py",
+    "line": 106,
+    "name": "GithubClient.__enter__",
+    "arguments": "self",
+    "returns": "'GithubClient'",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/github.py",
+    "line": 109,
+    "name": "GithubClient.__exit__",
+    "arguments": "self, *exc: Any",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/openalex.py",
+    "line": 29,
+    "name": "_should_retry",
+    "arguments": "exc: BaseException",
+    "returns": "bool",
+    "purpose": "仅对限流/服务端错误/传输异常重试。",
+    "calls": [
+      "isinstance"
+    ]
+  },
+  {
+    "file": "techtrend/sources/openalex.py",
+    "line": 37,
+    "name": "OpenAlexClient.__init__",
+    "arguments": "self, mailto: str | None=None, api_key: str | None=None, per_page: int=200, timeout: float=30.0",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "httpx.Client"
+    ]
+  },
+  {
+    "file": "techtrend/sources/openalex.py",
+    "line": 63,
+    "name": "OpenAlexClient._get_page",
+    "arguments": "self, params: dict[str, Any]",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "resp.json",
+      "resp.raise_for_status",
+      "retry",
+      "retry_if_exception",
+      "self.client.get",
+      "stop_after_attempt",
+      "wait_exponential"
+    ]
+  },
+  {
+    "file": "techtrend/sources/openalex.py",
+    "line": 69,
+    "name": "OpenAlexClient.fetch_works",
+    "arguments": "self, from_date: str | None, concept_ids: list[str] | None, max_works: int",
+    "returns": "list[dict]",
+    "purpose": "按过滤条件 cursor 分页拉取 works，直到空页或达 max_works。",
+    "calls": [
+      "','.join",
+      "'|'.join",
+      "data.get",
+      "dict",
+      "filters.append",
+      "len",
+      "log.info",
+      "self._get_page",
+      "works.extend"
+    ]
+  },
+  {
+    "file": "techtrend/sources/openalex.py",
+    "line": 110,
+    "name": "OpenAlexClient._reconstruct_abstract",
+    "arguments": "inv: dict | None",
+    "returns": "str | None",
+    "purpose": "把 abstract_inverted_index 还原为纯文本（P2 LLM 用，P1 结构化抽取不依赖）。",
+    "calls": [
+      "' '.join",
+      "inv.items",
+      "pairs.sort"
+    ]
+  },
+  {
+    "file": "techtrend/sources/openalex.py",
+    "line": 118,
+    "name": "OpenAlexClient.normalize",
+    "arguments": "self, work: dict",
+    "returns": "dict",
+    "purpose": "字段裁剪 + 归一化（display_name → name）。",
+    "calls": [
+      "(a.get('author') or {}).get",
+      "a.get",
+      "c.get",
+      "i.get",
+      "self._reconstruct_abstract",
+      "work.get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/openalex.py",
+    "line": 147,
+    "name": "OpenAlexClient.close",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.client.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/openalex.py",
+    "line": 150,
+    "name": "OpenAlexClient.__enter__",
+    "arguments": "self",
+    "returns": "'OpenAlexClient'",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/openalex.py",
+    "line": 153,
+    "name": "OpenAlexClient.__exit__",
+    "arguments": "self, *exc: Any",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 50,
+    "name": "PatentsViewBulkClient.__init__",
+    "arguments": "self, dest_dir: Path, timeout: float=120.0",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "Path",
+      "httpx.Client",
+      "self.dest_dir.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 56,
+    "name": "PatentsViewBulkClient.download",
+    "arguments": "self, filename: str, force: bool=False",
+    "returns": "Path",
+    "purpose": "下载 bulk 文件（.tsv.zip）到 dest_dir，返回解压后的 .tsv 路径。",
+    "calls": [
+      "extracted.exists",
+      "extracted.replace",
+      "f.write",
+      "log.info",
+      "n.endswith",
+      "next",
+      "open",
+      "resp.iter_bytes",
+      "resp.raise_for_status",
+      "self.client.stream",
+      "tsv_path.exists",
+      "zf.extract",
+      "zf.namelist",
+      "zip_path.exists",
+      "zipfile.ZipFile"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 86,
+    "name": "PatentsViewBulkClient.close",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.client.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 89,
+    "name": "PatentsViewBulkClient.__enter__",
+    "arguments": "self",
+    "returns": "'PatentsViewBulkClient'",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 92,
+    "name": "PatentsViewBulkClient.__exit__",
+    "arguments": "self, *exc",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 99,
+    "name": "iter_citation_tsv",
+    "arguments": "path: Path, patent_number_by_id: dict[str, str] | None=None, patent_date_by_id: dict[str, str] | None=None",
+    "returns": "Iterable[dict]",
+    "purpose": "流式解析 `g_us_patent_citation.tsv` → 逐条 yield 后向引用对 dict（不落 list）。",
+    "calls": [
+      "(row.get(cid) or '').strip",
+      "(row.get(pid) or '').strip",
+      "_col",
+      "_map_date",
+      "_map_id",
+      "_norm_date",
+      "c.lower",
+      "csv.DictReader",
+      "log.error",
+      "open",
+      "row.get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 135,
+    "name": "parse_citation_tsv",
+    "arguments": "path: Path, patent_number_by_id: dict[str, str] | None=None, patent_date_by_id: dict[str, str] | None=None",
+    "returns": "list[dict]",
+    "purpose": "解析 `g_us_patent_citation.tsv` → 后向引用对列表（list(iter_citation_tsv(...))）。",
+    "calls": [
+      "iter_citation_tsv",
+      "list"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 147,
+    "name": "parse_patent_dates",
+    "arguments": "path: Path",
+    "returns": "dict[str, str]",
+    "purpose": "解析 `g_patent.tsv` → {patent_id: ISO patent_date}（只取日期，供流式引文处理）。",
+    "calls": [
+      "(row.get(pid) or '').strip",
+      "_col",
+      "_norm_date",
+      "c.lower",
+      "csv.DictReader",
+      "log.error",
+      "open",
+      "row.get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 170,
+    "name": "parse_patent_tsv",
+    "arguments": "path: Path",
+    "returns": "tuple[dict[str, str], dict[str, str]]",
+    "purpose": "解析 PatentsView `g_patent.tsv` → (patent_number_by_id, patent_date_by_id)。",
+    "calls": [
+      "(row.get(pid) or '').strip",
+      "(row.get(pnum) or '').strip",
+      "_col",
+      "_norm_date",
+      "c.lower",
+      "csv.DictReader",
+      "log.error",
+      "open",
+      "row.get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 198,
+    "name": "_norm_date",
+    "arguments": "d: str",
+    "returns": "str",
+    "purpose": "日期归一化为 ISO YYYY-MM-DD（g_patent.patent_date 实际已是 ISO；兜底 M/D/YYYY）。",
+    "calls": [
+      "(d or '').strip",
+      "d.split",
+      "d[:4].isdigit",
+      "int",
+      "len"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 217,
+    "name": "_col",
+    "arguments": "cols: dict[str, str], *names: str",
+    "returns": "str | None",
+    "purpose": "按候选列名（小写）定位实际表头列，返回首个命中的原始列名；无则 None。",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 225,
+    "name": "_map_id",
+    "arguments": "pid: str, number_by_id: dict[str, str] | None",
+    "returns": "str",
+    "purpose": "patent_id → 统一专利 ID（uspto:<doc-number>）。无映射时退化为 uspto:<raw_id>。",
+    "calls": [
+      "(number_by_id or {}).get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 231,
+    "name": "_map_date",
+    "arguments": "pid: str, date_by_id: dict[str, str] | None",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "(date_by_id or {}).get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/patentsview.py",
+    "line": 235,
+    "name": "parse_bigquery_csv",
+    "arguments": "path: Path, patent_col: str='patent', cited_by_col: str='cited_by', cited_date_col: str='cited_by_date', patent_date_col: str='publication_date'",
+    "returns": "list[dict]",
+    "purpose": "解析 BigQuery 导出的前向引用 CSV（路线②备选）。",
+    "calls": [
+      "(row.get(cited_by_col) or '').strip",
+      "(row.get(cited_date_col) or '').strip",
+      "(row.get(patent_col) or '').strip",
+      "(row.get(patent_date_col) or '').strip",
+      "csv.DictReader",
+      "edges.append",
+      "open",
+      "row.get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/rsshub.py",
+    "line": 20,
+    "name": "_should_retry",
+    "arguments": "exc: BaseException",
+    "returns": "bool",
+    "purpose": "No docstring",
+    "calls": [
+      "isinstance"
+    ]
+  },
+  {
+    "file": "techtrend/sources/rsshub.py",
+    "line": 26,
+    "name": "_strip_html",
+    "arguments": "text: str",
+    "returns": "str",
+    "purpose": "去 HTML 标签 + 反转义，得到纯文本（喂 LLM）。",
+    "calls": [
+      "html.unescape",
+      "html.unescape(re.sub('\\\\s+', ' ', text)).strip",
+      "re.sub"
+    ]
+  },
+  {
+    "file": "techtrend/sources/rsshub.py",
+    "line": 33,
+    "name": "RssHubClient.__init__",
+    "arguments": "self, base_url: str='http://localhost:1200', timeout: float=30.0",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "base_url.rstrip",
+      "httpx.Client"
+    ]
+  },
+  {
+    "file": "techtrend/sources/rsshub.py",
+    "line": 44,
+    "name": "RssHubClient._get",
+    "arguments": "self, route: str",
+    "returns": "bytes",
+    "purpose": "No docstring",
+    "calls": [
+      "resp.raise_for_status",
+      "retry",
+      "retry_if_exception",
+      "self.client.get",
+      "stop_after_attempt",
+      "wait_exponential"
+    ]
+  },
+  {
+    "file": "techtrend/sources/rsshub.py",
+    "line": 50,
+    "name": "RssHubClient.fetch_items",
+    "arguments": "self, routes: list[str], max_items: int",
+    "returns": "list[dict]",
+    "purpose": "逐路由拉取 RSS，合并并截断到 max_items。",
+    "calls": [
+      "feedparser.parse",
+      "items.append",
+      "len",
+      "log.warning",
+      "self._get",
+      "self.normalize"
+    ]
+  },
+  {
+    "file": "techtrend/sources/rsshub.py",
+    "line": 70,
+    "name": "RssHubClient.normalize",
+    "arguments": "item: Any, route: str",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "(item.get('title') or '').strip",
+      "_strip_html",
+      "item.get",
+      "parsedate_to_datetime",
+      "parsedate_to_datetime(published).strftime"
+    ]
+  },
+  {
+    "file": "techtrend/sources/rsshub.py",
+    "line": 88,
+    "name": "RssHubClient.close",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.client.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/rsshub.py",
+    "line": 91,
+    "name": "RssHubClient.__enter__",
+    "arguments": "self",
+    "returns": "'RssHubClient'",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/rsshub.py",
+    "line": 94,
+    "name": "RssHubClient.__exit__",
+    "arguments": "self, *exc: Any",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 18,
+    "name": "_iter_documents",
+    "arguments": "path: Path",
+    "returns": "Iterator[ET.Element]",
+    "purpose": "流式产出单篇书目文档（跳过 `<?xml?>` 与 `<!DOCTYPE>` 声明行）。",
+    "calls": [
+      "_parse_buf",
+      "buf.append",
+      "line.lstrip",
+      "line.rstrip",
+      "open",
+      "stripped.startswith"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 36,
+    "name": "_parse_buf",
+    "arguments": "buf: list[str]",
+    "returns": "ET.Element | None",
+    "purpose": "No docstring",
+    "calls": [
+      "'\\n'.join",
+      "ET.fromstring",
+      "log.warning"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 44,
+    "name": "_addressbook_name",
+    "arguments": "ab: ET.Element",
+    "returns": "str | None",
+    "purpose": "addressbook → 显示名（orgname / name / last-name+first-name）。",
+    "calls": [
+      "' '.join",
+      "' '.join((x for x in (first, last) if x)).strip",
+      "ab.findtext",
+      "v.strip"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 57,
+    "name": "_cpc_code",
+    "arguments": "cpc: ET.Element",
+    "returns": "str | None",
+    "purpose": "classification-cpc → section+class+subclass（如 G06N）。",
+    "calls": [
+      "''.join",
+      "''.join(parts).strip",
+      "cpc.findtext"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 64,
+    "name": "_extract_citations",
+    "arguments": "root: ET.Element",
+    "returns": "list[dict]",
+    "purpose": "<us-references-cited><us-citation> → 后向引用（本专利引用了谁）。",
+    "calls": [
+      "(did.findtext('country') or '').strip",
+      "(did.findtext('date') or '').strip",
+      "(did.findtext('doc-number') or '').strip",
+      "(did.findtext('kind') or '').strip",
+      "cit.find",
+      "did.findtext",
+      "out.append",
+      "root.findall"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 94,
+    "name": "_uspto_id",
+    "arguments": "doc_number: str",
+    "returns": "str",
+    "purpose": "doc-number → 统一专利 ID（与书目 `id` 字段一致：uspto:<doc-number>）。",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 100,
+    "name": "UsptoClient.__init__",
+    "arguments": "self, raw_dir: Path, grant_glob: str='ipgb*/ipgb*.xml', app_glob: str='ipab*/ipab*.xml'",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "Path"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 111,
+    "name": "UsptoClient.list_files",
+    "arguments": "self",
+    "returns": "list[Path]",
+    "purpose": "按文件名日期升序返回全部周书目 XML。",
+    "calls": [
+      "self.raw_dir.glob",
+      "set",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 120,
+    "name": "UsptoClient.fetch_patents",
+    "arguments": "self, files: list[Path], from_date: str | None, cpc_prefix: str, max_records: int",
+    "returns": "list[dict]",
+    "purpose": "逐文件流式解析，CPC 前缀 + 日期过滤 + max_records 截断。",
+    "calls": [
+      "_iter_documents",
+      "cpc_prefix.split",
+      "from_date.replace",
+      "len",
+      "p.strip",
+      "records.append",
+      "self._match",
+      "self._parse_biblio",
+      "self.normalize"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 145,
+    "name": "UsptoClient.fetch_citations",
+    "arguments": "self, files: list[Path], max_records: int=1000000",
+    "returns": "list[dict]",
+    "purpose": "流式提取「后向引用边」（不按 CPC 过滤、不限制主题）。",
+    "calls": [
+      "_extract_citations",
+      "_iter_documents",
+      "_uspto_id",
+      "doc_ref.findtext",
+      "edges.append",
+      "len",
+      "root.find"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 189,
+    "name": "UsptoClient._match",
+    "arguments": "rec: dict, prefixes: list[str], from_yyyymmdd: str | None",
+    "returns": "bool",
+    "purpose": "No docstring",
+    "calls": [
+      "(rec.get('publication_date') or '').replace",
+      "any",
+      "c.startswith",
+      "rec.get"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 200,
+    "name": "UsptoClient._parse_biblio",
+    "arguments": "self, root: ET.Element",
+    "returns": "dict | None",
+    "purpose": "No docstring",
+    "calls": [
+      "' '.join",
+      "_addressbook_name",
+      "_cpc_code",
+      "_extract_citations",
+      "assignees.append",
+      "cpc_codes.append",
+      "doc_ref.findtext",
+      "inventors.append",
+      "len",
+      "root.find",
+      "root.findall",
+      "root.findtext",
+      "x.strip"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 247,
+    "name": "UsptoClient.normalize",
+    "arguments": "record: dict",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "dict",
+      "record.setdefault"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 252,
+    "name": "UsptoClient.close",
+    "arguments": "self",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 255,
+    "name": "UsptoClient.__enter__",
+    "arguments": "self",
+    "returns": "'UsptoClient'",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 258,
+    "name": "UsptoClient.__exit__",
+    "arguments": "self, *exc",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "self.close"
+    ]
+  },
+  {
+    "file": "techtrend/sources/uspto.py",
+    "line": 262,
+    "name": "file_date",
+    "arguments": "path: Path",
+    "returns": "str",
+    "purpose": "从文件名提取日期（如 ipgb20260915.xml → 20260915），失败返回空串。",
+    "calls": [
+      "m.group",
+      "re.search"
+    ]
+  },
+  {
+    "file": "techtrend/stages/__init__.py",
+    "line": 16,
+    "name": "get_default_stages",
+    "arguments": "settings: Settings",
+    "returns": "list[Stage]",
+    "purpose": "返回按执行顺序排列的阶段实例（第 9 阶段 visualize 在末尾，含四目标仪表盘 + 周报）。",
+    "calls": [
+      "AlignStage",
+      "BuildGraphStage",
+      "CollaborateStage",
+      "CollectStage",
+      "EvaluateStage",
+      "ExtractStage",
+      "NotifyStage",
+      "PredictStage",
+      "ReportStage",
+      "VisualizeStage"
+    ]
+  },
+  {
+    "file": "techtrend/stages/align.py",
+    "line": 19,
+    "name": "AlignStage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "a.get",
+      "align_entities",
+      "len",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "n.get",
+      "read_jsonl",
+      "str",
+      "sum",
+      "write_jsonl"
+    ]
+  },
+  {
+    "file": "techtrend/stages/base.py",
+    "line": 12,
+    "name": "Stage.__init__",
+    "arguments": "self, settings: Settings",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/stages/base.py",
+    "line": 16,
+    "name": "Stage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "执行本阶段，返回结果摘要 dict。",
+    "calls": []
+  },
+  {
+    "file": "techtrend/stages/build_graph.py",
+    "line": 15,
+    "name": "BuildGraphStage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "Neo4jClient",
+      "client.close",
+      "client.verify_connectivity",
+      "load_triples",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "read_jsonl",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collaborate.py",
+    "line": 24,
+    "name": "CollaborateStage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "(output_dir / 'collab_conflicts.json').write_text",
+      "(output_dir / 'collab_consensus.json').write_text",
+      "(output_dir / 'collab_review_request.json').write_text",
+      "collaborate",
+      "json.dumps",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "output_dir.mkdir",
+      "read_jsonl",
+      "result.get",
+      "result.pop",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 29,
+    "name": "_dedupe_by_id",
+    "arguments": "records: list[dict]",
+    "returns": "list[dict]",
+    "purpose": "No docstring",
+    "calls": [
+      "out.append",
+      "r.get",
+      "seen.add",
+      "set"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 40,
+    "name": "_append_dedup",
+    "arguments": "interim_path: Path, records: list[dict]",
+    "returns": "int",
+    "purpose": "与存量 interim 按 id 去重后追加，返回新增条数。",
+    "calls": [
+      "append_jsonl",
+      "datetime.now",
+      "datetime.now(timezone.utc).isoformat",
+      "len",
+      "r.get",
+      "read_jsonl"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 50,
+    "name": "_write_raw",
+    "arguments": "raw_dir: Path, source: str, run_date: str, tag: str, records: list[dict], *, source_url: str | None=None, query: dict | None=None",
+    "returns": "Path",
+    "purpose": "No docstring",
+    "calls": [
+      "directory.mkdir",
+      "file.write",
+      "json.dumps",
+      "len",
+      "path.open",
+      "write_snapshot_metadata"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 71,
+    "name": "_read_cursor",
+    "arguments": "s: Settings, name: str",
+    "returns": "str | None",
+    "purpose": "No docstring",
+    "calls": [
+      "f.exists",
+      "f.read_text",
+      "f.read_text(encoding='utf-8').strip"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 78,
+    "name": "_write_cursor",
+    "arguments": "s: Settings, name: str, value: str",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "(s.data_dir / f'.{name}_cursor').write_text"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 82,
+    "name": "_today",
+    "arguments": "",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "datetime.now",
+      "datetime.now().strftime"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 86,
+    "name": "_cleanup_old_weeks",
+    "arguments": "raw_dir: Path, keep_weeks: int",
+    "returns": "int",
+    "purpose": "归档超过 keep_weeks 周的 ipgb/ipab 周目录（移到 _archive，非删除）。",
+    "calls": [
+      "_dir_date",
+      "d.is_dir",
+      "log.info",
+      "raw_dir.iterdir",
+      "re.match",
+      "set",
+      "shutil.move",
+      "sorted",
+      "str",
+      "target.parent.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 108,
+    "name": "_dir_date",
+    "arguments": "d: Path",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "m.group",
+      "re.search"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 116,
+    "name": "CollectStage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "_HANDLERS.get",
+      "any",
+      "handler",
+      "interim_dir.mkdir",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "raw_dir.mkdir",
+      "s.collect_sources.split",
+      "summary.values",
+      "x.strip"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 145,
+    "name": "_collect_openalex",
+    "arguments": "s: Settings, interim_dir: Path, raw_dir: Path",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "OpenAlexClient",
+      "_append_dedup",
+      "_dedupe_by_id",
+      "_read_cursor",
+      "_today",
+      "_write_cursor",
+      "_write_raw",
+      "c.strip",
+      "client.close",
+      "client.fetch_works",
+      "client.normalize",
+      "re.sub",
+      "s.openalex_concept_ids.split"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 162,
+    "name": "_collect_crossref",
+    "arguments": "s: Settings, interim_dir: Path, raw_dir: Path",
+    "returns": "int",
+    "purpose": "CrossRef（第 7 源）：DOI 锚点 + mailto polite pool。写入 works.jsonl（与 OpenAlex",
+    "calls": [
+      "CrossrefClient",
+      "_append_dedup",
+      "_dedupe_by_id",
+      "_read_cursor",
+      "_today",
+      "_write_cursor",
+      "_write_raw",
+      "client.close",
+      "client.fetch_works",
+      "client.normalize",
+      "re.sub",
+      "w.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 184,
+    "name": "_collect_arxiv",
+    "arguments": "s: Settings, interim_dir: Path, raw_dir: Path",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "ArxivClient",
+      "_append_dedup",
+      "_dedupe_by_id",
+      "_read_cursor",
+      "_today",
+      "_write_cursor",
+      "_write_raw",
+      "c.strip",
+      "client.close",
+      "client.fetch_works",
+      "re.sub",
+      "s.arxiv_categories.split"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 201,
+    "name": "_collect_uspto",
+    "arguments": "s: Settings, interim_dir: Path, raw_dir: Path",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "Path",
+      "UsptoClient",
+      "_append_dedup",
+      "_cleanup_old_weeks",
+      "_read_cursor",
+      "_today",
+      "_write_cursor",
+      "_write_raw",
+      "client.fetch_patents",
+      "client.list_files",
+      "file_date",
+      "max",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 218,
+    "name": "_collect_gdelt",
+    "arguments": "s: Settings, interim_dir: Path, raw_dir: Path",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "GdeltClient",
+      "_append_dedup",
+      "_dedupe_by_id",
+      "_read_cursor",
+      "_today",
+      "_write_cursor",
+      "_write_raw",
+      "client.close",
+      "client.fetch_news",
+      "s.gdelt_theme_filter.split",
+      "t.strip"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 234,
+    "name": "_collect_github",
+    "arguments": "s: Settings, interim_dir: Path, raw_dir: Path",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "GithubClient",
+      "_append_dedup",
+      "_dedupe_by_id",
+      "_read_cursor",
+      "_today",
+      "_write_cursor",
+      "_write_raw",
+      "append_jsonl",
+      "client.close",
+      "client.fetch_repos",
+      "datetime.now",
+      "datetime.now().isoformat",
+      "r.get",
+      "s.github_topics.split",
+      "t.strip"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 257,
+    "name": "_collect_rsshub",
+    "arguments": "s: Settings, interim_dir: Path, raw_dir: Path",
+    "returns": "int",
+    "purpose": "No docstring",
+    "calls": [
+      "RssHubClient",
+      "_append_dedup",
+      "_dedupe_by_id",
+      "_today",
+      "_write_raw",
+      "client.close",
+      "client.fetch_items",
+      "r.strip",
+      "s.rsshub_routes.split"
+    ]
+  },
+  {
+    "file": "techtrend/stages/collect.py",
+    "line": 271,
+    "name": "_collect_patent_citations",
+    "arguments": "s: Settings, interim_dir: Path, raw_dir: Path",
+    "returns": "int",
+    "purpose": "专利前向引用图（P0-1）：按 patent_citation_source 取后向引用对 → 反转 → 落 jsonl。",
+    "calls": [
+      "FileNotFoundError",
+      "NotImplementedError",
+      "PatentsViewBulkClient",
+      "Path",
+      "UsptoClient",
+      "ValueError",
+      "_today",
+      "_write_raw",
+      "append_jsonl",
+      "client.download",
+      "client.fetch_citations",
+      "client.list_files",
+      "csv_path.exists",
+      "date.today",
+      "date.today().isoformat",
+      "f.write",
+      "forward_fact",
+      "iter_citation_tsv",
+      "json.dumps",
+      "len",
+      "log.error",
+      "log.info",
+      "open",
+      "out_path.parent.mkdir",
+      "parse_bigquery_csv",
+      "parse_patent_dates",
+      "r.get",
+      "read_jsonl",
+      "reserve_snapshot_path",
+      "s.patent_citation_source.strip",
+      "shutil.copyfile",
+      "str",
+      "write_snapshot_metadata"
+    ]
+  },
+  {
+    "file": "techtrend/stages/evaluate.py",
+    "line": 27,
+    "name": "EvaluateStage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "(output_dir / 'eval_metrics.json').write_text",
+      "(output_dir / 'eval_report.md').write_text",
+      "(output_dir / 'leak_check.json').write_text",
+      "_render_report",
+      "build_concept_monthly_counts",
+      "c.strip",
+      "citation_metrics.get",
+      "date.today",
+      "date.today().isoformat",
+      "ev.backtest_ranking",
+      "ev.backtest_regression",
+      "ev.backtest_tkg",
+      "ev.leak_check",
+      "ev.rolling_origins",
+      "ev.walk_forward_splits",
+      "json.dumps",
+      "len",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "max",
+      "min",
+      "monthly.attrs.get",
+      "monthly.drop",
+      "output_dir.mkdir",
+      "r.strip",
+      "rank_result.get",
+      "read_jsonl",
+      "reg_result.get",
+      "s.openalex_concept_ids.split",
+      "s.techpair_relations.split",
+      "s.tkg_doc_types.split",
+      "self._run_citation_metrics",
+      "self._write_folds_csv",
+      "str",
+      "tkg_result.get",
+      "tp.load_directed_edges",
+      "tp.project_t2t",
+      "w.get",
+      "x.strip"
+    ]
+  },
+  {
+    "file": "techtrend/stages/evaluate.py",
+    "line": 230,
+    "name": "EvaluateStage._run_citation_metrics",
+    "arguments": "s, ev, cfg_reg",
+    "returns": "dict",
+    "purpose": "专利前向引用时序（P1-2）：累积引用曲线 → 回归真值 + S 曲线阶段标签。",
+    "calls": [
+      "(s.output_dir / 'citation_metrics.json').write_text",
+      "Path",
+      "build_patent_citation_monthly",
+      "curves.to_csv",
+      "date.today",
+      "date.today().isoformat",
+      "ev.backtest_regression",
+      "f.get",
+      "finish",
+      "json.dumps",
+      "len",
+      "log.info",
+      "mean_stage_curves",
+      "monthly.attrs.get",
+      "path.exists",
+      "pd.DataFrame",
+      "pd.DataFrame({'patent': stages.index, 'stage': stages.to_numpy()}).to_csv",
+      "read_jsonl",
+      "reg.get",
+      "s.output_dir.mkdir",
+      "s_curve_stages",
+      "stages.to_numpy",
+      "stages.value_counts",
+      "stages.value_counts().to_dict"
+    ]
+  },
+  {
+    "file": "techtrend/stages/evaluate.py",
+    "line": 250,
+    "name": "EvaluateStage._run_citation_metrics.finish",
+    "arguments": "",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "(s.output_dir / 'citation_metrics.json').write_text",
+      "json.dumps",
+      "s.output_dir.mkdir"
+    ]
+  },
+  {
+    "file": "techtrend/stages/evaluate.py",
+    "line": 317,
+    "name": "EvaluateStage._write_folds_csv",
+    "arguments": "path, tkg_folds: list[dict]",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "f.get",
+      "pd.DataFrame",
+      "pd.DataFrame(rows, columns=cols).to_csv"
+    ]
+  },
+  {
+    "file": "techtrend/stages/evaluate.py",
+    "line": 327,
+    "name": "_fmt",
+    "arguments": "v",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/stages/evaluate.py",
+    "line": 331,
+    "name": "_conclusion",
+    "arguments": "eval_metrics: dict",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "eval_metrics.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/evaluate.py",
+    "line": 343,
+    "name": "_render_report",
+    "arguments": "m: dict",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "'\\n'.join",
+      "_conclusion",
+      "_fmt",
+      "m.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/extract.py",
+    "line": 32,
+    "name": "ExtractStage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "Counter",
+      "LLMExtractor",
+      "build_nodes",
+      "datetime.now",
+      "datetime.now().isoformat",
+      "dedupe_events",
+      "dict",
+      "document.get",
+      "documents.get",
+      "extract_triples",
+      "extractor",
+      "interim_dir.mkdir",
+      "len",
+      "list",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "nodes.values",
+      "read_jsonl",
+      "record.get",
+      "self._merge_nodes",
+      "self._run_llm",
+      "self._run_openalex_tech_pairs",
+      "self._run_tone",
+      "short_id",
+      "str",
+      "t.get",
+      "triples.extend",
+      "write_jsonl"
+    ]
+  },
+  {
+    "file": "techtrend/stages/extract.py",
+    "line": 123,
+    "name": "ExtractStage._merge_nodes",
+    "arguments": "nodes: dict, new_nodes: list[dict]",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "existing.get",
+      "node.items",
+      "nodes.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/extract.py",
+    "line": 134,
+    "name": "ExtractStage._run_llm",
+    "arguments": "self, extractor, arxiv, patents, github, news, triples, nodes",
+    "returns": "tuple[int, list[dict]]",
+    "purpose": "LLM 抽取 doc→tech（文档→技术实体/关系）。返回 (调用 doc 数, 定向对三元组)。",
+    "calls": [
+      "deterministic_entity_id",
+      "doc.get",
+      "extractor.extract",
+      "log.warning",
+      "r.get",
+      "self._merge_nodes",
+      "triples.append"
+    ]
+  },
+  {
+    "file": "techtrend/stages/extract.py",
+    "line": 182,
+    "name": "ExtractStage._run_openalex_tech_pairs",
+    "arguments": "self, extractor, works, directed_pairs, nodes",
+    "returns": "int",
+    "purpose": "对 OpenAlex works（有摘要 + 时态跨度）抽定向 tech→tech 边。",
+    "calls": [
+      "(c.get('name') or '').strip",
+      "(w.get('abstract') or '').strip",
+      "c.get",
+      "c.strip",
+      "date.today",
+      "date.today().isoformat",
+      "directed_pairs.append",
+      "extractor.extract_tech_pairs",
+      "log.warning",
+      "name2cid.get",
+      "names.append",
+      "r.strip",
+      "s.openalex_concept_ids.split",
+      "s.techpair_relations.split",
+      "short_id",
+      "sorted",
+      "w.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/extract.py",
+    "line": 244,
+    "name": "ExtractStage._run_tone",
+    "arguments": "extractor, news, nodes",
+    "returns": "None",
+    "purpose": "为 RSSHub 中文新闻节点补 LLM tone（-1..1）。",
+    "calls": [
+      "extractor.extract_tone",
+      "nodes.get",
+      "r.get",
+      "text.strip"
+    ]
+  },
+  {
+    "file": "techtrend/stages/notify_stage.py",
+    "line": 17,
+    "name": "NotifyStage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "c.strip",
+      "log.info",
+      "log.warning",
+      "push_report",
+      "report_path.exists",
+      "report_path.read_text",
+      "s.notify_channels.split"
+    ]
+  },
+  {
+    "file": "techtrend/stages/predict.py",
+    "line": 32,
+    "name": "PredictStage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "(output_dir / 'baseline_metrics.json').write_text",
+      "(output_dir / 'temporal_metrics.json').write_text",
+      "(output_dir / 'tkg_scores.json').write_text",
+      "baseline.update",
+      "build_concept_monthly_counts",
+      "date.today",
+      "date.today().isoformat",
+      "forecast_out.get",
+      "json.dumps",
+      "log.exception",
+      "log.info",
+      "output_dir.mkdir",
+      "read_jsonl",
+      "result.get",
+      "result.update",
+      "score_cache_payload",
+      "self._run_forecast",
+      "self._run_fusion",
+      "self._run_kleinberg",
+      "self._run_rotate",
+      "self._run_share_signal",
+      "self._run_tkg",
+      "str",
+      "t.get",
+      "temporal.pop",
+      "temporal.update",
+      "tkg_out.get",
+      "w.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/predict.py",
+    "line": 104,
+    "name": "PredictStage._run_kleinberg",
+    "arguments": "self, s, works, output_dir",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "build_concept_monthly_counts",
+      "c.strip",
+      "concept_names",
+      "detect_top_bursts",
+      "df.drop",
+      "future_growth_top_k",
+      "len",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "names.get",
+      "pd.DataFrame",
+      "pd.DataFrame(rows).to_csv",
+      "precision_at_k",
+      "recall_at_k",
+      "s.openalex_concept_ids.split",
+      "top_bursts.iterrows",
+      "top_bursts['concept'].tolist"
+    ]
+  },
+  {
+    "file": "techtrend/stages/predict.py",
+    "line": 147,
+    "name": "PredictStage._run_share_signal",
+    "arguments": "self, s, works, output_dir",
+    "returns": "dict",
+    "purpose": "阶段 1 合并：相对份额动量信号（与 Kleinberg 消融并列，救目标① p@k=0）。",
+    "calls": [
+      "build_concept_monthly_counts",
+      "c.strip",
+      "df.drop",
+      "future_growth_top_k",
+      "len",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "precision_at_k",
+      "recall_at_k",
+      "s.openalex_concept_ids.split",
+      "share_momentum_rank"
+    ]
+  },
+  {
+    "file": "techtrend/stages/predict.py",
+    "line": 177,
+    "name": "PredictStage._run_rotate",
+    "arguments": "self, s, triples",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "log.exception",
+      "log.warning",
+      "random_split",
+      "run_rotate"
+    ]
+  },
+  {
+    "file": "techtrend/stages/predict.py",
+    "line": 198,
+    "name": "PredictStage._run_tkg",
+    "arguments": "self, s, triples, output_dir",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "copy_metrics.get",
+      "cygnet.build_history",
+      "cygnet.encode_ids",
+      "cygnet.evaluate_copy_only",
+      "cygnet.evaluate_cygnet",
+      "cygnet.future_link_scores",
+      "cygnet.train_cygnet",
+      "date.today",
+      "date.today().isoformat",
+      "dict.fromkeys",
+      "len",
+      "list",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "max_time.strip",
+      "metrics.get",
+      "r.strip",
+      "rotate_t.get",
+      "run_rotate",
+      "s.techpair_relations.split",
+      "s.tkg_doc_types.split",
+      "self._write_jsonl",
+      "tlogic.mine_rules",
+      "tp.apply_graph_scope",
+      "tp.fit_graph_scope",
+      "tp.load_directed_edges",
+      "tp.project_t2t",
+      "tp.temporal_split_3way",
+      "x.strip"
+    ]
+  },
+  {
+    "file": "techtrend/stages/predict.py",
+    "line": 311,
+    "name": "PredictStage._run_forecast",
+    "arguments": "self, s, works, output_dir",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "build_concept_monthly_counts",
+      "c.strip",
+      "concept_names",
+      "df.drop",
+      "log.exception",
+      "log.warning",
+      "max",
+      "pd.DataFrame",
+      "pd.DataFrame(res['forecasts']).to_csv",
+      "regression.run_regression",
+      "s.openalex_concept_ids.split"
+    ]
+  },
+  {
+    "file": "techtrend/stages/predict.py",
+    "line": 352,
+    "name": "PredictStage._run_fusion",
+    "arguments": "self, s, works, tkg_scores, forecast_signal, output_dir",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "build_concept_monthly_counts",
+      "c.strip",
+      "concept_names",
+      "concept_share_momentum",
+      "df.drop",
+      "fusion.fuse",
+      "fusion.parse_weights",
+      "future_growth_top_k",
+      "hist_df.loc[cid].to_numpy",
+      "kleinberg_bursts",
+      "len",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "max",
+      "pd.DataFrame",
+      "pd.DataFrame(rows).to_csv",
+      "precision_at_k",
+      "recall_at_k",
+      "s.openalex_concept_ids.split",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/stages/predict.py",
+    "line": 397,
+    "name": "PredictStage._write_jsonl",
+    "arguments": "path, rows",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "f.write",
+      "json.dumps",
+      "open"
+    ]
+  },
+  {
+    "file": "techtrend/stages/report.py",
+    "line": 18,
+    "name": "ReportStage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "_read_json",
+      "_render",
+      "_render_four_goals",
+      "_render_llm_narrative",
+      "json.loads",
+      "log.exception",
+      "log.info",
+      "log.warning",
+      "metrics_path.exists",
+      "metrics_path.read_text",
+      "output_dir.mkdir",
+      "report_path.write_text",
+      "str",
+      "temporal_path.exists",
+      "temporal_path.read_text"
+    ]
+  },
+  {
+    "file": "techtrend/stages/report.py",
+    "line": 56,
+    "name": "_read_json",
+    "arguments": "path",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "json.loads",
+      "path.read_text"
+    ]
+  },
+  {
+    "file": "techtrend/stages/report.py",
+    "line": 63,
+    "name": "_fmt",
+    "arguments": "v",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/stages/report.py",
+    "line": 67,
+    "name": "_read_fusion_top",
+    "arguments": "output_dir, k: int=5",
+    "returns": "list[dict]",
+    "purpose": "读 fusion_ranking.csv 的前 k 个概念（entity/name/score）。",
+    "calls": [
+      "csv.DictReader",
+      "list",
+      "log.warning",
+      "open",
+      "path.exists",
+      "r.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/report.py",
+    "line": 86,
+    "name": "_render_llm_narrative",
+    "arguments": "s, output_dir, eval_m: dict",
+    "returns": "str",
+    "purpose": "阶段 4 合并：DeepSeek 研报解读（榜单解读 + 回测可靠性 + 行动建议）。",
+    "calls": [
+      "(output_dir / 'report_llm.md').write_text",
+      "(resp.choices[0].message.content or '').strip",
+      "OpenAI",
+      "_read_fusion_top",
+      "client.chat.completions.create",
+      "eval_m.get",
+      "json.dumps",
+      "log.info",
+      "log.warning"
+    ]
+  },
+  {
+    "file": "techtrend/stages/report.py",
+    "line": 149,
+    "name": "_render",
+    "arguments": "baseline: dict, temporal: dict",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "'\\n'.join",
+      "_conclusion_line",
+      "_fmt",
+      "baseline.get",
+      "lines.append",
+      "lines.extend",
+      "temporal.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/report.py",
+    "line": 222,
+    "name": "_render_four_goals",
+    "arguments": "eval_m: dict, cite_m: dict",
+    "returns": "str",
+    "purpose": "四目标总览（walk-forward 回测 + 引用时序 + S 曲线），如实标注数据来源。",
+    "calls": [
+      "'\\n'.join",
+      "'，'.join",
+      "_fmt",
+      "cite_m.get",
+      "eval_m.get",
+      "s_curve.items",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/stages/report.py",
+    "line": 252,
+    "name": "_conclusion_line",
+    "arguments": "temporal: dict",
+    "returns": "str",
+    "purpose": "是否优于静态（时态同协议）基线。",
+    "calls": [
+      "temporal.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/visualize.py",
+    "line": 27,
+    "name": "_fmt",
+    "arguments": "v",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/stages/visualize.py",
+    "line": 31,
+    "name": "_read_json",
+    "arguments": "path: Path",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "json.loads",
+      "path.read_text"
+    ]
+  },
+  {
+    "file": "techtrend/stages/visualize.py",
+    "line": 38,
+    "name": "_read_csv",
+    "arguments": "path: Path, index_col: int | None=None",
+    "returns": "unspecified",
+    "purpose": "No docstring",
+    "calls": [
+      "pd.DataFrame",
+      "pd.read_csv"
+    ]
+  },
+  {
+    "file": "techtrend/stages/visualize.py",
+    "line": 52,
+    "name": "VisualizeStage.run",
+    "arguments": "self",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "C.forecast_svg",
+      "C.fusion_rank_svg",
+      "C.s_curve_overlay_svg",
+      "C.stage_dist_svg",
+      "C.trend_top_svg",
+      "C.walkforward_folds_svg",
+      "Path",
+      "_read_csv",
+      "_read_json",
+      "_read_json(out_dir / 'citation_metrics.json').get",
+      "build_concept_monthly_counts",
+      "build_weekly_report",
+      "c.strip",
+      "charts.append",
+      "charts_dir.mkdir",
+      "concept_lifecycle_stages",
+      "concept_names",
+      "cstages.value_counts",
+      "cstages.value_counts().to_dict",
+      "dash_path.parent.mkdir",
+      "dash_path.write_text",
+      "datetime.now",
+      "datetime.now().strftime",
+      "dict.fromkeys",
+      "folds_df.to_dict",
+      "fusion_df.head",
+      "fusion_df.head(s.viz_top_k).fillna",
+      "fusion_df.head(s.viz_top_k).fillna('—').values.tolist",
+      "heroes.append",
+      "isinstance",
+      "json.loads",
+      "len",
+      "list",
+      "log.exception",
+      "log.info",
+      "mean_stage_curves",
+      "min",
+      "monthly.cumsum",
+      "monthly.drop",
+      "notes.append",
+      "out_dir.mkdir",
+      "path.exists",
+      "path.read_text",
+      "pstages['stage'].value_counts",
+      "pstages['stage'].value_counts().to_dict",
+      "r.get",
+      "read_jsonl",
+      "render",
+      "s.openalex_concept_ids.split",
+      "self._build_heroes",
+      "self._build_notes",
+      "self._read_reports",
+      "self._resolve",
+      "self._s_curve_hero",
+      "self._write_chart_files",
+      "str",
+      "tables.append",
+      "weekly.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/visualize.py",
+    "line": 239,
+    "name": "VisualizeStage._resolve",
+    "arguments": "output_dir: Path, target: str",
+    "returns": "Path",
+    "purpose": "把配置里的相对路径解析为 Path：裸文件名归 output_dir，其余按 CWD 相对。",
+    "calls": [
+      "Path",
+      "p.is_absolute"
+    ]
+  },
+  {
+    "file": "techtrend/stages/visualize.py",
+    "line": 247,
+    "name": "VisualizeStage._s_curve_hero",
+    "arguments": "scope: str, dist: dict",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "' / '.join",
+      "dist.get",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/stages/visualize.py",
+    "line": 257,
+    "name": "VisualizeStage._build_heroes",
+    "arguments": "eval_m: dict, cite_m: dict",
+    "returns": "list[dict]",
+    "purpose": "No docstring",
+    "calls": [
+      "_fmt",
+      "cite_m.get",
+      "eval_m.get"
+    ]
+  },
+  {
+    "file": "techtrend/stages/visualize.py",
+    "line": 279,
+    "name": "VisualizeStage._build_notes",
+    "arguments": "eval_m: dict, cite_m: dict",
+    "returns": "list[str]",
+    "purpose": "No docstring",
+    "calls": [
+      "cite_m.get",
+      "eval_m.get",
+      "notes.append"
+    ]
+  },
+  {
+    "file": "techtrend/stages/visualize.py",
+    "line": 295,
+    "name": "VisualizeStage._write_chart_files",
+    "arguments": "charts_dir: Path, charts: list[dict]",
+    "returns": "None",
+    "purpose": "No docstring",
+    "calls": [
+      "(charts_dir / f'{key}.svg').write_text",
+      "c.get",
+      "enumerate"
+    ]
+  },
+  {
+    "file": "techtrend/stages/visualize.py",
+    "line": 304,
+    "name": "VisualizeStage._read_reports",
+    "arguments": "out_dir: Path, weekly_path: Path",
+    "returns": "list[dict]",
+    "purpose": "Read a fixed report allowlist; embed escaped Markdown source for offline review.",
+    "calls": [
+      "path.exists",
+      "path.read_text",
+      "paths.append",
+      "paths.extend",
+      "reports.append",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/storage.py",
+    "line": 9,
+    "name": "reserve_snapshot_path",
+    "arguments": "directory: Path, stem: str",
+    "returns": "Path",
+    "purpose": "Reserve a new numbered file exclusively; the caller fills this empty file.",
+    "calls": [
+      "directory.mkdir",
+      "path.open",
+      "path.open('x', encoding='utf-8').close"
+    ]
+  },
+  {
+    "file": "techtrend/storage.py",
+    "line": 22,
+    "name": "file_digest",
+    "arguments": "path: Path",
+    "returns": "str",
+    "purpose": "SHA-256 without loading large datasets into memory.",
+    "calls": [
+      "digest.hexdigest",
+      "digest.update",
+      "hashlib.sha256",
+      "iter",
+      "path.open",
+      "stream.read"
+    ]
+  },
+  {
+    "file": "techtrend/storage.py",
+    "line": 31,
+    "name": "write_snapshot_metadata",
+    "arguments": "path: Path, *, source: str, row_count: int, dataset_version: str, source_url: str | None=None, query: dict | None=None",
+    "returns": "None",
+    "purpose": "Write an exclusive sidecar for a normalized snapshot, with observed time.",
+    "calls": [
+      "datetime.now",
+      "datetime.now(timezone.utc).isoformat",
+      "file_digest",
+      "json.dump",
+      "path.with_suffix",
+      "path.with_suffix('.metadata.json').open"
+    ]
+  },
+  {
+    "file": "techtrend/storage.py",
+    "line": 52,
+    "name": "snapshot_outputs",
+    "arguments": "output_dir: Path, reason: str",
+    "returns": "Path | None",
+    "purpose": "Preserve current reports before rerun; numbered archives are immutable.",
+    "calls": [
+      "(archive / 'snapshot_manifest.json').open",
+      "Path",
+      "archive.mkdir",
+      "charts.exists",
+      "datetime.now",
+      "datetime.now(timezone.utc).isoformat",
+      "file_digest",
+      "json.dump",
+      "output_dir.exists",
+      "output_dir.iterdir",
+      "p.is_file",
+      "p.name.startswith",
+      "shutil.copy2",
+      "shutil.copytree",
+      "sorted"
+    ]
+  },
+  {
+    "file": "techtrend/viz/charts.py",
+    "line": 25,
+    "name": "trend_top_svg",
+    "arguments": "monthly: pd.DataFrame, top_k: int=6, names: Mapping[str, str] | None=None",
+    "returns": "str",
+    "purpose": "目标③：top-k 概念月度活动量趋势折线。",
+    "calls": [
+      "len",
+      "line_chart",
+      "monthly.loc[c].to_numpy",
+      "monthly.loc[c].to_numpy(dtype=float).tolist",
+      "monthly.sum",
+      "names.get",
+      "range",
+      "series.append",
+      "str",
+      "totals.sort_values",
+      "totals.sort_values(ascending=False).head"
+    ]
+  },
+  {
+    "file": "techtrend/viz/charts.py",
+    "line": 48,
+    "name": "s_curve_overlay_svg",
+    "arguments": "curves: pd.DataFrame",
+    "returns": "str",
+    "purpose": "目标④：每个阶段一条「归一化累积」均值曲线（形状对比）。",
+    "calls": [
+      "curves.loc[st].to_numpy",
+      "curves.loc[st].to_numpy(dtype=float).tolist",
+      "line_chart",
+      "roles.append",
+      "series.append",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/viz/charts.py",
+    "line": 69,
+    "name": "stage_dist_svg",
+    "arguments": "dist: Mapping[str, int]",
+    "returns": "str",
+    "purpose": "目标④：阶段分布柱状。",
+    "calls": [
+      "col_chart",
+      "dist.get",
+      "int"
+    ]
+  },
+  {
+    "file": "techtrend/viz/charts.py",
+    "line": 77,
+    "name": "walkforward_folds_svg",
+    "arguments": "folds: Sequence[dict]",
+    "returns": "str",
+    "purpose": "目标②：walk-forward 每折 filtered MRR（CyGNet / copy-only / RotatE）。",
+    "calls": [
+      "f.get",
+      "line_chart"
+    ]
+  },
+  {
+    "file": "techtrend/viz/charts.py",
+    "line": 97,
+    "name": "fusion_rank_svg",
+    "arguments": "ranking: pd.DataFrame, top_k: int=10",
+    "returns": "str",
+    "purpose": "目标①：融合 top-k 得分横向条（单色，长度编码量级）。",
+    "calls": [
+      "df.iterrows",
+      "float",
+      "hbar_chart",
+      "len",
+      "ranking.head",
+      "row.get",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/viz/charts.py",
+    "line": 109,
+    "name": "forecast_svg",
+    "arguments": "forecasts: pd.DataFrame, top_k: int=40",
+    "returns": "str",
+    "purpose": "目标③：actual vs forecast 散点（对角参考线显式标注系统性高估）。",
+    "calls": [
+      "''.join",
+      "X",
+      "Y",
+      "actual.max",
+      "color",
+      "df['actual'].astype",
+      "df['actual'].astype(float).to_numpy",
+      "df['forecast'].astype",
+      "df['forecast'].astype(float).to_numpy",
+      "float",
+      "forecasts.head",
+      "max",
+      "p.append",
+      "pred.max",
+      "zip"
+    ]
+  },
+  {
+    "file": "techtrend/viz/charts.py",
+    "line": 121,
+    "name": "forecast_svg.X",
+    "arguments": "v: float",
+    "returns": "float",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/viz/charts.py",
+    "line": 124,
+    "name": "forecast_svg.Y",
+    "arguments": "v: float",
+    "returns": "float",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/viz/dashboard.py",
+    "line": 60,
+    "name": "_esc",
+    "arguments": "s",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "str",
+      "str(s).replace",
+      "str(s).replace('&', '&amp;').replace",
+      "str(s).replace('&', '&amp;').replace('<', '&lt;').replace",
+      "str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace"
+    ]
+  },
+  {
+    "file": "techtrend/viz/dashboard.py",
+    "line": 70,
+    "name": "_tokens",
+    "arguments": "vars_: dict",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "'\\n'.join",
+      "vars_.items"
+    ]
+  },
+  {
+    "file": "techtrend/viz/dashboard.py",
+    "line": 74,
+    "name": "_css",
+    "arguments": "",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "_tokens"
+    ]
+  },
+  {
+    "file": "techtrend/viz/dashboard.py",
+    "line": 141,
+    "name": "_hero_tiles",
+    "arguments": "heroes: Sequence[dict]",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "''.join",
+      "_esc",
+      "h.get",
+      "parts.append"
+    ]
+  },
+  {
+    "file": "techtrend/viz/dashboard.py",
+    "line": 154,
+    "name": "_chart_cards",
+    "arguments": "charts: Sequence[dict]",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "''.join",
+      "_esc",
+      "c.get",
+      "parts.append"
+    ]
+  },
+  {
+    "file": "techtrend/viz/dashboard.py",
+    "line": 168,
+    "name": "_tables",
+    "arguments": "tables: Sequence[dict] | None",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "''.join",
+      "_esc",
+      "body.append",
+      "len",
+      "parts.append",
+      "range",
+      "t.get"
+    ]
+  },
+  {
+    "file": "techtrend/viz/dashboard.py",
+    "line": 189,
+    "name": "render",
+    "arguments": "*, heroes: Sequence[dict] | None=None, charts: Sequence[dict] | None=None, notes: Sequence[str] | None=None, tables: Sequence[dict] | None=None, reports: Sequence[dict] | None=None, generated_at: str='', theme: str='auto', title: str='技术趋势预测 Dashboard'",
+    "returns": "str",
+    "purpose": "装配完整 HTML 文档。heroes=[{label,value,sub}]；charts=[{title,svg,note}]（有序）。",
+    "calls": [
+      "''.join",
+      "_chart_cards",
+      "_css",
+      "_esc",
+      "_hero_tiles",
+      "_tables",
+      "r.get"
+    ]
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 23,
+    "name": "_esc",
+    "arguments": "s",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "str",
+      "str(s).replace",
+      "str(s).replace('&', '&amp;').replace",
+      "str(s).replace('&', '&amp;').replace('<', '&lt;').replace",
+      "str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace"
+    ]
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 33,
+    "name": "color",
+    "arguments": "role: str",
+    "returns": "str",
+    "purpose": "CSS 变量引用（theme-aware）。",
+    "calls": []
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 38,
+    "name": "nice_ticks",
+    "arguments": "lo: float, hi: float, n: int=5",
+    "returns": "list[float]",
+    "purpose": "整洁刻度（1 / 2 / 5 × 10^k），用于 y 轴。",
+    "calls": [
+      "math.floor",
+      "math.log10",
+      "ticks.append"
+    ]
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 60,
+    "name": "_fmt",
+    "arguments": "v: float, yfmt: Callable[[float], str] | None",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": [
+      "int",
+      "yfmt"
+    ]
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 68,
+    "name": "_legend",
+    "arguments": "labels: Sequence[str], roles: Sequence[str], width: int",
+    "returns": "str",
+    "purpose": "顶部图例（≥2 序列必带图例；文本用 text-secondary，不穿系列色）。",
+    "calls": [
+      "''.join",
+      "_esc",
+      "color",
+      "enumerate",
+      "len",
+      "parts.append",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 87,
+    "name": "line_chart",
+    "arguments": "series: Sequence[tuple[str, Sequence[float]]], xlabels: Sequence[str], title: str='', width: int=760, height: int=340, yfmt: Callable[[float], str] | None=None, roles: Sequence[str] | None=None",
+    "returns": "str",
+    "purpose": "多序列折线图（趋势 / walk-forward 折线）。series = [(label, values), ...]。",
+    "calls": [
+      "' '.join",
+      "''.join",
+      "X",
+      "Y",
+      "_esc",
+      "_fmt",
+      "_legend",
+      "color",
+      "enumerate",
+      "len",
+      "list",
+      "math.ceil",
+      "math.isfinite",
+      "max",
+      "min",
+      "nice_ticks",
+      "p.append",
+      "points.append",
+      "range",
+      "segments.append",
+      "valid.append"
+    ]
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 112,
+    "name": "line_chart.X",
+    "arguments": "i: int",
+    "returns": "float",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 115,
+    "name": "line_chart.Y",
+    "arguments": "v: float",
+    "returns": "float",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 184,
+    "name": "hbar_chart",
+    "arguments": "items: Sequence[tuple[str, float]], title: str='', width: int=760, height: int | None=None, yfmt: Callable[[float], str] | None=None, role: str='series-1'",
+    "returns": "str",
+    "purpose": "横向条形图（融合 top-k 榜单）。单色（长度编码量级），label 直接标注在条端。",
+    "calls": [
+      "''.join",
+      "Y",
+      "_esc",
+      "_fmt",
+      "color",
+      "enumerate",
+      "len",
+      "max",
+      "p.append",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 204,
+    "name": "hbar_chart.Y",
+    "arguments": "i: int",
+    "returns": "float",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 232,
+    "name": "col_chart",
+    "arguments": "items: Sequence[tuple[str, float, str]], title: str='', width: int=760, height: int=300, yfmt: Callable[[float], str] | None=None",
+    "returns": "str",
+    "purpose": "竖向柱状图（阶段分布）。items = [(label, value, css_role), ...]。",
+    "calls": [
+      "''.join",
+      "X",
+      "Y",
+      "_esc",
+      "_fmt",
+      "color",
+      "enumerate",
+      "len",
+      "max",
+      "min",
+      "nice_ticks",
+      "p.append"
+    ]
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 252,
+    "name": "col_chart.X",
+    "arguments": "i: int",
+    "returns": "float",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/viz/svg.py",
+    "line": 255,
+    "name": "col_chart.Y",
+    "arguments": "v: float",
+    "returns": "float",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/viz/weekly.py",
+    "line": 20,
+    "name": "_fmt",
+    "arguments": "v",
+    "returns": "str",
+    "purpose": "No docstring",
+    "calls": []
+  },
+  {
+    "file": "techtrend/viz/weekly.py",
+    "line": 24,
+    "name": "_read_json",
+    "arguments": "path: Path",
+    "returns": "dict",
+    "purpose": "No docstring",
+    "calls": [
+      "json.loads",
+      "path.read_text"
+    ]
+  },
+  {
+    "file": "techtrend/viz/weekly.py",
+    "line": 31,
+    "name": "_read_csv_col",
+    "arguments": "path: Path, col: str, limit: int=10",
+    "returns": "list[str]",
+    "purpose": "No docstring",
+    "calls": [
+      "df[col].head",
+      "df[col].head(limit).tolist",
+      "pd.read_csv",
+      "str"
+    ]
+  },
+  {
+    "file": "techtrend/viz/weekly.py",
+    "line": 41,
+    "name": "build_weekly_report",
+    "arguments": "settings: Settings",
+    "returns": "dict",
+    "purpose": "生成周报，返回 {\"status\",\"report_file\",\"window_days\",\"n_runs\"}。",
+    "calls": [
+      "'\\n'.join",
+      "(r.get('new_records') or {}).items",
+      "Path",
+      "_fmt",
+      "_read_csv_col",
+      "_read_json",
+      "cite_m.get",
+      "datetime.now",
+      "datetime.now().strftime",
+      "eval_m.get",
+      "isinstance",
+      "len",
+      "lines.append",
+      "log.info",
+      "out_dir.mkdir",
+      "r.get",
+      "read_jsonl",
+      "report_file.is_absolute",
+      "report_file.parent.mkdir",
+      "report_file.write_text",
+      "since.isoformat",
+      "sorted",
+      "source_totals.get",
+      "source_totals.items",
+      "str",
+      "timedelta"
+    ]
+  }
+]

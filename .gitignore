@@ -1,5 +1,6 @@
 # 敏感文件
 .env
+Attempt/env/*.local
 .local_backups/
 resources/
 
