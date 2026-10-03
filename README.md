@@ -4,28 +4,23 @@
 
 > 当前本机版本基于 Merged-pretend-kg-agent 获取提交，包含十阶段流程。完整目标见 [PROJECT_PLAN.md](PROJECT_PLAN.md)；最新数据准备见 [data_preparation_02.md](Attempt/docs/data_preparation_02.md)，时间泄漏修订见 [leakage_revision_01.md](Attempt/docs/leakage_revision_01.md)，研究方向见 [research_direction_01.md](Attempt/docs/research_direction_01.md)。
 
-## 本机环境与运行（Windows PowerShell）
+## 日常操作入口
 
-项目根目录：`F:\Predictive agents`。所有相对存储路径按项目根目录解析。
+请使用 [简明操作指南](DOCUMENTATION_INDEX.md)：查看看板、继续准备数据、检查结果及重启数据库。项目根目录为 `F:\Predictive agents`，日常使用已有 `.venv`。
 
 ```powershell
 Set-Location 'F:\Predictive agents'
-# 本次已建立 .venv；独立重建时使用本机可用的 Python：
-& 'D:\ide\Anaconda\python.exe' -m venv .venv
-& '.\.venv\Scripts\python.exe' -m pip install -r requirements.txt
-# .env 已配置本机数据路径与专用 Neo4j；其他 API 配置按 .env.example 填入。
-& '.\.venv\Scripts\python.exe' main.py --list
-& '.\.venv\Scripts\python.exe' main.py --stage visualize
-& '.\.venv\Scripts\python.exe' -m pytest tests -q --basetemp=output/test_tmp_00 -p no:cacheprovider
+Invoke-Item '.\output\runs\research_01\dashboard.html'
 ```
 
-本次验证环境为 Python 3.13.9，`.venv` 使用 `--system-site-packages` 复用本机 Anaconda 的已装包；
-环境快照见 `Attempt/docs/local_environment_00.txt`。独立重建命令不复用系统包，需重新安装全部依赖。
+当前环境为 Python 3.13.9；`.venv` 复用本机 Anaconda 的已装包，环境快照见 `Attempt/docs/local_environment_00.txt`。独立重建时，在项目根目录运行 `D:\ide\Anaconda\python.exe -m venv .venv`，再用 `.venv\Scripts\python.exe -m pip install -r requirements.txt` 安装依赖。
 Neo4j 已配置为本机 Docker 实例（`bolt://127.0.0.1:7687`）；数据库密码和 API key 只保存在忽略的本地配置。
 默认不启动定时任务或对外推送。完整采集/训练需相应数据与外部服务。
 
 当前研究看板：`output/runs/research_01/dashboard.html`；分析文档也在该输出目录。旧 `output/dashboard.html` 保留为修订 00 的空状态产物。
 以下原仓库的阶段数字为历史记录，不能视为本机已复现的实验结果。
+
+本轮已从旧版本备份找回操作指南的文件名 `DOCUMENTATION_INDEX.md`，按当前入口重写并简化，更新 Python、`.env`、数据与看板路径；旧备份保留。命令与脚本参数、文档链接均已核对。此前数据准备提交的说明已改为中文“完成十年跨学科数据准备与图谱入库”，代码内容保持相同；后续版本说明也使用中文。
 
 ## 本机修订 02（2026-10-03，继续真实数据准备）
 
