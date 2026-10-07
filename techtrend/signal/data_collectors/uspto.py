@@ -134,7 +134,7 @@ class UsptoCollector:
                             base_url,
                             params,
                             cache_key=cache_key,
-                            headers=headers,
+                            extra_headers=headers,
                         )
                     else:
                         body = _build_patentsearch_body(query, date_start, date_end)
@@ -143,7 +143,7 @@ class UsptoCollector:
                             base_url,
                             body,
                             cache_key=cache_key,
-                            headers=headers,
+                            extra_headers=headers,
                         )
                 except Exception as exc:  # noqa: BLE001 - preserve partial progress
                     records.append(self._failed_record(topic, w_start, w_end, exc))

@@ -38,6 +38,13 @@ class PredictStage(Stage):
 
             works = read_jsonl(interim_dir / "works.jsonl")
             triples = read_jsonl(interim_dir / "triples.jsonl")
+            from datetime import date
+            max_time = s.tkg_max_time or date.today().isoformat()
+            works = [w for w in works if w.get("publication_date") and w["publication_date"] <= max_time]
+            triples = [t for t in triples if t.get("time") and t["time"] <= max_time]
+            monthly = build_concept_monthly_counts(works, mode=s.burst_bin)
+            fusion_as_of = str(monthly.columns[-s.burst_future_months]) if monthly.shape[1] > s.burst_future_months else None
+            historical_triples = [t for t in triples if fusion_as_of and (t.get("time") or "") < fusion_as_of]
 
             # ---- 基线（Kleinberg + 相对份额动量 + RotatE 随机切分），向后兼容 ----
             baseline: dict = {"stage": self.name}
@@ -46,15 +53,14 @@ class PredictStage(Stage):
             baseline.update(self._run_rotate(s, triples))
 
             # ---- P3 时序：RotatE 时态对照 + TKG + 回归 + 融合 ----
-            temporal: dict = {}
-            tkg_out = self._run_tkg(s, triples, output_dir)
+            temporal: dict = {"prediction_kind": "historical_backtest", "fusion_as_of": fusion_as_of, "protocol_version": "causal_01"}
+            tkg_out = self._run_tkg(s, historical_triples, output_dir)
             temporal.update(tkg_out)
             # 阶段 5 合并：持久化未来链接分，供链接预测 agent（collaborate 阶段）复用
-            if tkg_out.get("_tkg_scores"):
-                (output_dir / "tkg_scores.json").write_text(
-                    json.dumps(tkg_out["_tkg_scores"], ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
+            from techtrend.orchestration.collab import score_cache_payload
+            (output_dir / "tkg_scores.json").write_text(
+                json.dumps(score_cache_payload(tkg_out.get("_tkg_scores", {}), historical_triples, s), ensure_ascii=False, indent=2), encoding="utf-8",
+            )
             forecast_out = self._run_forecast(s, works, output_dir)
             temporal.update(forecast_out)
             temporal.update(
@@ -225,13 +231,13 @@ class PredictStage(Stage):
                 techpair_rel = {r.strip() for r in s.techpair_relations.split(",") if r.strip()}
                 facts = tp.load_directed_edges(
                     triples, relations=techpair_rel,
-                    min_support=s.techpair_min_support, max_time=max_time,
+                    min_support=1, max_time=max_time,
                 )
             else:
                 # 共现投影（正式主边源，P3 起沿用）
                 facts = tp.project_t2t(
                     triples, relation=s.tkg_relation,
-                    min_cooccur=s.tkg_min_cooccur, max_entities=s.tkg_max_entities,
+                    min_cooccur=1, max_entities=0,
                     doc_types=doc_types, max_time=max_time,
                 )
             if len(facts) < 50:
@@ -240,6 +246,10 @@ class PredictStage(Stage):
 
             # 2. 时态 3-way 切分（时间不重叠）
             train, val, test = tp.temporal_split_3way(facts, s.tkg_train_ratio, s.tkg_val_ratio)
+            scope = tp.fit_graph_scope(train, min_support=s.techpair_min_support if s.tkg_edge_source == "directed" else s.tkg_min_cooccur, max_entities=s.tkg_max_entities)
+            train = tp.apply_graph_scope(train, scope, training=True)
+            val = tp.apply_graph_scope(val, scope)
+            test = tp.apply_graph_scope(test, scope)
             out["tkg_train_triples"] = len(train)
             out["tkg_val_triples"] = len(val)
             out["tkg_test_triples"] = len(test)
@@ -289,7 +299,7 @@ class PredictStage(Stage):
             self._write_jsonl(output_dir / "tkg_rules.jsonl", rules)
 
             # 7. 未来链接分（供融合）
-            heads = list(dict.fromkeys(t["head"] for t in test))
+            heads = list(dict.fromkeys(t["head"] for t in train + val))
             out["_tkg_scores"] = cygnet.future_link_scores(bundle, heads)
         except Exception as exc:  # noqa: BLE001 —— TKG 失败不阻断 Kleinberg/RotatE/回归
             log.exception("TKG 外推运行失败")
@@ -317,7 +327,7 @@ class PredictStage(Stage):
 
             names = concept_names(works)
             res = regression.run_regression(
-                df, horizon=s.forecast_horizon, min_history=s.forecast_min_history,
+                df, horizon=s.burst_future_months, min_history=s.forecast_min_history,
                 top_k=s.forecast_top_k, lag=s.forecast_lag, names=names,
             )
             out["forecast_mae"] = res["mae"]

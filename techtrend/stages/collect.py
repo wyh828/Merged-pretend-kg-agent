@@ -5,9 +5,11 @@
 - 按 id 去重保证幂等（续跑不重复）；raw 快照写 `data/raw/<source>/<date>/`。
 """
 import logging
+import json
 import re
 import shutil
 from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 
 from techtrend.config import Settings
@@ -20,6 +22,7 @@ from techtrend.sources.openalex import OpenAlexClient
 from techtrend.sources.rsshub import RssHubClient
 from techtrend.sources.uspto import UsptoClient, file_date
 from techtrend.stages.base import Stage
+from techtrend.storage import write_snapshot_metadata, reserve_snapshot_path, write_api_snapshot
 
 log = logging.getLogger(__name__)
 
@@ -35,16 +38,37 @@ def _dedupe_by_id(records: list[dict]) -> list[dict]:
     return out
 
 
-def _append_dedup(interim_path: Path, records: list[dict]) -> int:
+def _append_dedup(interim_path: Path, records: list[dict], existing_ids: set | None = None) -> int:
     """与存量 interim 按 id 去重后追加，返回新增条数。"""
-    existing = {r.get("id") for r in read_jsonl(interim_path) if r.get("id")}
-    new = [r for r in records if r.get("id") and r.get("id") not in existing]
+    existing = existing_ids if existing_ids is not None else {r.get("id") for r in read_jsonl(interim_path) if r.get("id")}
+    observed = datetime.now(timezone.utc).isoformat()
+    new = [{**r, "collected_at": r.get("collected_at") or observed,
+            "dataset_version": interim_path.parent.parent.name}
+           for r in _dedupe_by_id(records) if r.get("id") and r.get("id") not in existing]
     append_jsonl(interim_path, new)
+    existing.update(r["id"] for r in new)
     return len(new)
 
 
-def _write_raw(raw_dir: Path, source: str, run_date: str, tag: str, records: list[dict]) -> None:
-    write_jsonl(raw_dir / source / run_date / f"{source}_{tag}.jsonl", records)
+def _write_raw(raw_dir: Path, source: str, run_date: str, tag: str, records: list[dict],
+               *, source_url: str | None = None, query: dict | None = None) -> Path:
+    directory = raw_dir / source / run_date
+    directory.mkdir(parents=True, exist_ok=True)
+    version = 0
+    while True:
+        path = directory / f"{source}_{tag}_{version:02d}.jsonl"
+        try:
+            # Exclusive creation preserves prior snapshots even on concurrent runs.
+            import json
+            with path.open("x", encoding="utf-8") as file:
+                for record in records:
+                    file.write(json.dumps(record, ensure_ascii=False) + "\n")
+            write_snapshot_metadata(path, source=source, row_count=len(records),
+                                    dataset_version=raw_dir.parent.name,
+                                    source_url=source_url, query=query)
+            return path
+        except FileExistsError:
+            version += 1
 
 
 def _read_cursor(s: Settings, name: str) -> str | None:
@@ -114,47 +138,69 @@ class CollectStage(Stage):
                 summary[src] = "error"
 
         log.info("collect 完成：%s", summary)
-        return {"stage": self.name, "status": "ok", "sources": summary}
+        status = "error" if any(v in ("error", "unknown") for v in summary.values()) else "ok"
+        return {"stage": self.name, "status": status, "sources": summary}
 
 
 # ---------------------------------------------------------------------------
 # 各源处理器（返回新增条数）
 # ---------------------------------------------------------------------------
 def _collect_openalex(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
-    from_date = _read_cursor(s, "openalex") or s.openalex_from_date
-    concept_ids = [c.strip() for c in s.openalex_concept_ids.split(",") if c.strip()]
-    client = OpenAlexClient(mailto=s.openalex_mailto, api_key=s.openalex_api_key, per_page=s.openalex_per_page)
-    try:
-        works = [client.normalize(w) for w in client.fetch_works(from_date, concept_ids, s.openalex_max_works)]
-    finally:
-        client.close()
-    works = _dedupe_by_id(works)
-    tag = re.sub(r"[^0-9A-Za-z-]", "_", from_date or "initial")
-    _write_raw(raw_dir, "openalex", _today(), tag, works)
-    new = _append_dedup(interim_dir / "works.jsonl", works)
-    _write_cursor(s, "openalex", _today())
-    return new
+    with OpenAlexClient(mailto=s.openalex_mailto, api_key=s.openalex_api_key,
+                        per_page=s.openalex_per_page) as client:
+        return _collect_academic(s, interim_dir, raw_dir, "openalex", client,
+                                 s.openalex_max_works)
 
 
 def _collect_crossref(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
     """CrossRef（第 7 源）：DOI 锚点 + mailto polite pool。写入 works.jsonl（与 OpenAlex
     同文件，同属「学术 works」，下游 align 按 DOI 强锚点合并去重）。"""
-    from_date = _read_cursor(s, "crossref") or s.crossref_from_date
-    client = CrossrefClient(mailto=s.crossref_mailto, per_page=s.crossref_per_page)
-    try:
-        works = [
-            client.normalize(w)
-            for w in client.fetch_works(from_date, None, s.crossref_max_records)
-        ]
-    finally:
-        client.close()
-    works = [w for w in works if w.get("id")]
-    works = _dedupe_by_id(works)
-    tag = re.sub(r"[^0-9A-Za-z-]", "_", from_date or "initial")
-    _write_raw(raw_dir, "crossref", _today(), tag, works)
-    new = _append_dedup(interim_dir / "works.jsonl", works)
-    _write_cursor(s, "crossref", _today())
-    return new
+    with CrossrefClient(mailto=s.crossref_mailto, per_page=s.crossref_per_page) as client:
+        return _collect_academic(s, interim_dir, raw_dir, "crossref", client,
+                                 s.crossref_max_records)
+
+
+def _collect_academic(s: Settings, interim_dir: Path, raw_dir: Path, source: str,
+                      client, cap: int) -> int:
+    """Persist each page before checkpoint; capped windows never advance dates.
+
+    Progress is mutable operational state; API snapshots remain immutable.
+    A crash between append and checkpoint safely replays/deduplicates the page.
+    """
+    progress_path = s.data_dir / "metadata" / f"{source}_progress_02.json"
+    progress_path.parent.mkdir(parents=True, exist_ok=True)
+    spec = {"from_date": getattr(s, f"{source}_from_date") or s.collection_start_date,
+            "until_date": s.collection_end_date,
+            "concept_ids": s.openalex_concept_ids if source == "openalex" else "",
+            "field_ids": s.openalex_field_ids if source == "openalex" else ""}
+    state = json.loads(progress_path.read_text(encoding="utf-8")) if progress_path.exists() else {}
+    if state.get("spec") != spec:
+        state = {"spec": spec, "cursor": "*", "complete": False, "pages": 0}
+    if state.get("complete"):
+        return 0
+    new_count = 0
+    def persist_page(payload, query, next_cursor, complete):
+        nonlocal new_count
+        path = write_api_snapshot(raw_dir / source / _today(), f"{source}_page",
+                                  source=source, source_url=str(client.client.base_url) + "works",
+                                  query=query, payload=payload, dataset_version=s.data_dir.name)
+        raw_records = payload["results"] if source == "openalex" else payload["message"]["items"]
+        normalized = [client.normalize(record) for record in raw_records]
+        for record in normalized:
+            record["raw_snapshot"] = str(path.relative_to(s.data_dir))
+        new_count += _append_dedup(interim_dir / "works.jsonl", normalized)
+        state.update(cursor=next_cursor, complete=complete, pages=state["pages"] + 1,
+                     last_raw_snapshot=str(path.relative_to(s.data_dir)))
+        temporary = progress_path.with_suffix(".tmp")
+        temporary.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        temporary.replace(progress_path)
+    extra = {"field_ids": [x for x in s.openalex_field_ids.split(",") if x]} if source == "openalex" else {}
+    client.fetch_batch(spec["from_date"], [x for x in spec["concept_ids"].split(",") if x], cap,
+                       until_date=spec["until_date"], cursor=state["cursor"],
+                       on_page=persist_page, **extra)
+    if state["complete"]:
+        _write_cursor(s, source, spec["until_date"])
+    return new_count
 
 
 def _collect_arxiv(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
@@ -167,7 +213,8 @@ def _collect_arxiv(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
         client.close()
     records = _dedupe_by_id(records)
     tag = re.sub(r"[^0-9A-Za-z-]", "_", from_date or "initial")
-    _write_raw(raw_dir, "arxiv", _today(), tag, records)
+    _write_raw(raw_dir, "arxiv", _today(), tag, records, source_url="https://export.arxiv.org/api/query",
+               query={"from_date": from_date, "categories": categories, "max_records": s.arxiv_max_records})
     new = _append_dedup(interim_dir / "arxiv.jsonl", records)
     _write_cursor(s, "arxiv", _today())
     return new
@@ -180,7 +227,8 @@ def _collect_uspto(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
     cursor = _read_cursor(s, "uspto")  # 上次处理到的最新文件名日期
     new_files = [f for f in files if file_date(f) > (cursor or "")] if cursor else files
     records = client.fetch_patents(new_files, None, s.uspto_cpc_prefix, s.uspto_max_records)
-    _write_raw(raw_dir, "uspto", _today(), "batch", records)
+    _write_raw(raw_dir, "uspto", _today(), "batch", records, source_url=str(uspto_dir),
+               query={"files": [f.name for f in new_files], "cpc_prefix": s.uspto_cpc_prefix, "max_records": s.uspto_max_records})
     new = _append_dedup(interim_dir / "patents.jsonl", records)
     latest = max((file_date(f) for f in files), default=None)
     if latest:
@@ -198,7 +246,8 @@ def _collect_gdelt(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
     finally:
         client.close()
     records = _dedupe_by_id(records)
-    _write_raw(raw_dir, "gdelt", _today(), "batch", records)
+    _write_raw(raw_dir, "gdelt", _today(), "batch", records, source_url="https://api.gdeltproject.org/api/v2/doc/doc",
+               query={"from_date": from_date, "themes": themes, "max_records": s.gdelt_max_records})
     new = _append_dedup(interim_dir / "news.jsonl", records)
     _write_cursor(s, "gdelt", _today())
     return new
@@ -213,7 +262,8 @@ def _collect_github(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
     finally:
         client.close()
     repos = _dedupe_by_id(repos)
-    _write_raw(raw_dir, "github", _today(), "batch", repos)
+    _write_raw(raw_dir, "github", _today(), "batch", repos, source_url="https://api.github.com/search/repositories",
+               query={"from_date": from_date, "topics": topics, "min_stars": s.github_min_stars, "max_repos": s.github_max_repos})
     new = _append_dedup(interim_dir / "github.jsonl", repos)
     # 每日 star 快照（P3 趋势核心信号，从一开始就记录）
     now = datetime.now().isoformat(timespec="seconds")
@@ -234,7 +284,8 @@ def _collect_rsshub(s: Settings, interim_dir: Path, raw_dir: Path) -> int:
     finally:
         client.close()
     items = _dedupe_by_id(items)
-    _write_raw(raw_dir, "rsshub", _today(), "batch", items)
+    _write_raw(raw_dir, "rsshub", _today(), "batch", items, source_url=s.rsshub_base_url,
+               query={"routes": routes, "max_items": s.rsshub_max_items})
     new = _append_dedup(interim_dir / "news.jsonl", items)
     return new
 
@@ -247,7 +298,6 @@ def _collect_patent_citations(s: Settings, interim_dir: Path, raw_dir: Path) -> 
     免 key；本地 XML 路线零下载、立即可用（时态跨度受限于已保留的周文件数）。
     """
     import json
-    from collections import Counter
     from datetime import date
 
     from techtrend.prediction.citations import forward_fact
@@ -279,62 +329,49 @@ def _collect_patent_citations(s: Settings, interim_dir: Path, raw_dir: Path) -> 
         merged = [f for f in facts if (f["head"], f["relation"], f["tail"], f["time"]) not in existing]
         if merged:
             append_jsonl(out_path, merged)
-            _write_raw(raw_dir, "patent_citations", _today(), "batch", merged)
+            _write_raw(raw_dir, "patent_citations", _today(), "batch", merged,
+                       source_url=str(s.uspto_raw_dir), query={"mode": source, "min_time": min_time, "max_time": max_time})
         log.info("patent_citations：新增 %d / 总 %d 条 → %s", len(merged), len(existing) + len(merged), out_path)
         return len(merged)
 
     if source == "patentsview":
         # 终版表名：g_patent.tsv（旧 patent.tsv）、g_us_patent_citation.tsv（旧 uspatentcitation.tsv）。
-        # 全量 bulk：流式两遍扫描，取 top-N 被引专利（保留「奠基专利被反复引用」的高重复结构），
-        # 覆盖式写入（替代本地 XML 单周快照的错误时态）。
+        # Preserve all in-window facts; sampling belongs inside each training fold.
+        if s.patent_citation_max_patents > 0:
+            raise ValueError("PATENT_CITATION_MAX_PATENTS 必须为 0：按未来总引用 top-N 采集会泄漏；规模控制应按时间分批或逐折选样")
         with PatentsViewBulkClient(Path(s.uspto_raw_dir) / "patentsview") as client:
             patent_tsv = client.download("g_patent.tsv")
             cite_tsv = client.download("g_us_patent_citation.tsv")
         date_by_id = parse_patent_dates(patent_tsv)
         log.info("g_patent 日期映射 %d 条", len(date_by_id))
 
-        # 第 1 遍：窗口内计数被引专利（citing_date ∈ [min_time, max_time]）
-        cited_count: Counter = Counter()
-        n_window = 0
-        for e in iter_citation_tsv(cite_tsv, None, date_by_id):
-            t = e.get("citing_date") or ""
-            if not t or (min_time and t < min_time) or t > max_time:
-                continue
-            n_window += 1
-            if e.get("cited"):
-                cited_count[e["cited"]] += 1
-        max_patents = s.patent_citation_max_patents
-        top = set(cited_count) if max_patents <= 0 or len(cited_count) <= max_patents else {
-            c for c, _ in cited_count.most_common(max_patents)
-        }
-        log.info("patentsview 窗口内引用 %d 条，被引专利 %d → 保留 top-%d", n_window, len(cited_count), len(top))
-
-        # 第 2 遍：只写被引 ∈ top 的前向事实（覆盖写）
+        snapshot = reserve_snapshot_path(raw_dir / "patent_citations" / _today(), "patent_citations_bulk")
         n = 0
-        with open(out_path, "w", encoding="utf-8") as f:
+        with open(snapshot, "w", encoding="utf-8") as f:
             for e in iter_citation_tsv(cite_tsv, None, date_by_id):
-                if e.get("cited") not in top:
-                    continue
                 fact = forward_fact(e, min_time=min_time, max_time=max_time)
                 if fact is None:
                     continue
                 f.write(json.dumps(fact, ensure_ascii=False) + "\n")
                 n += 1
-        log.info("patentsview 前向引用事实 %d 条 → %s（覆盖写）", n, out_path)
+        write_snapshot_metadata(snapshot, source="patentsview", row_count=n,
+                                dataset_version=s.data_dir.name, source_url=str(cite_tsv),
+                                query={"min_time": min_time, "max_time": max_time, "candidate_selection": "none"})
+        shutil.copyfile(snapshot, out_path)
+        log.info("patentsview 前向引用事实 %d 条 → %s（独立快照 %s）", n, out_path, snapshot)
         return n
 
     if source == "bigquery":
         csv_path = interim_dir / "uspto_forward_citations.csv"
         if not csv_path.exists():
-            log.error("BigQuery 导出文件不存在：%s（先按计划 §2 路线① 导出）", csv_path)
-            return 0
+            raise FileNotFoundError(f"BigQuery 导出文件不存在：{csv_path}")
         backward = parse_bigquery_csv(csv_path)
         log.info("BigQuery CSV 解析后向引用对 %d 条", len(backward))
         facts = [forward_fact(e, min_time=min_time, max_time=max_time) for e in backward]
         facts = [f for f in facts if f is not None]
-        write_jsonl(out_path, facts)
-        if facts:
-            _write_raw(raw_dir, "patent_citations", _today(), "batch", facts)
+        snapshot = _write_raw(raw_dir, "patent_citations", _today(), "batch", facts,
+                              source_url=str(csv_path), query={"mode": source, "min_time": min_time, "max_time": max_time})
+        shutil.copyfile(snapshot, out_path)
         log.info("bigquery 前向引用事实 %d 条 → %s（覆盖写）", len(facts), out_path)
         return len(facts)
 
@@ -347,10 +384,9 @@ def _collect_patent_citations(s: Settings, interim_dir: Path, raw_dir: Path) -> 
             "→ ID.me 身份核验 → data.uspto.gov/apis/getting-started 申请 key。"
             "PatentsView 旧 S3 bulk（2026-03 退役）与 bulkdata.uspto.gov（NXDOMAIN）均已下线。"
         )
-        return 0
+        raise NotImplementedError("ODP 采集接口尚未实现，不能把未执行报告为 0 条成功")
 
-    log.warning("未知 patent_citation_source=%s，跳过", source)
-    return 0
+    raise ValueError(f"未知 patent_citation_source={source}")
 
 
 _HANDLERS = {

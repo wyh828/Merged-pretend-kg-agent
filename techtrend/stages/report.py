@@ -21,11 +21,15 @@ class ReportStage(Stage):
             output_dir = s.output_dir
             output_dir.mkdir(parents=True, exist_ok=True)
             metrics_path = output_dir / "baseline_metrics.json"
+            eval_m = _read_json(output_dir / "eval_metrics.json")
+            cite_m = _read_json(output_dir / "citation_metrics.json")
             if not metrics_path.exists():
-                log.warning("baseline_metrics.json 不存在，请先运行 --stage predict")
-                return {"stage": self.name, "status": "ok", "report_file": None}
-
-            baseline = json.loads(metrics_path.read_text(encoding="utf-8"))
+                if not eval_m and not cite_m:
+                    log.warning("没有预测或评估产物，请先运行 --stage predict/evaluate")
+                    return {"stage": self.name, "status": "skipped", "reason": "missing prediction/evaluation artifacts", "report_file": None}
+                baseline = {}
+            else:
+                baseline = json.loads(metrics_path.read_text(encoding="utf-8"))
             temporal_path = output_dir / "temporal_metrics.json"
             temporal = (
                 json.loads(temporal_path.read_text(encoding="utf-8"))
@@ -34,8 +38,6 @@ class ReportStage(Stage):
             )
 
             body = _render(baseline, temporal)
-            eval_m = _read_json(output_dir / "eval_metrics.json")
-            cite_m = _read_json(output_dir / "citation_metrics.json")
             if eval_m or cite_m:
                 body += _render_four_goals(eval_m, cite_m)
 
@@ -107,7 +109,7 @@ def _render_llm_narrative(s, output_dir, eval_m: dict) -> str:
     }
     prompt = (
         "我们构建了一套面向跨领域技术趋势预测的图+信号融合系统，结合学术论文、开源社区、新闻报道等多源信号，"
-        "采用「相对注意力份额 + EMA/MACD 动量」综合评分（Concept 细粒度），并做了无未来数据泄露的滚动时间窗口回测。\n\n"
+        "采用「相对注意力份额 + EMA/MACD 动量」综合评分（Concept 细粒度），提供了滚动时间窗口回测产物，但时间泄漏仍需独立审查。\n\n"
         "【最新融合技术榜单（Top 5）】：\n"
         f"{json.dumps(top5, ensure_ascii=False, indent=2)}\n\n"
         "【滚动回测结果（排序指标：p@k、NDCG@3/5、Spearman 秩相关、Top-1 Lift；Kleinberg 突发为消融基线）】：\n"
@@ -227,7 +229,7 @@ def _render_four_goals(eval_m: dict, cite_m: dict) -> str:
         "，".join(f"{k}={v}" for k, v in sorted(s_curve.items()))
         if s_curve else "—"
     )
-    verdict = "✅ 优于" if (tkg or 0) > (rotate or 0) else "❌ 未优于"
+    verdict = "未验证（缺少模型或对照指标）" if tkg is None or rotate is None else ("✅ 优于" if tkg > rotate else "❌ 未优于")
     return "\n".join([
         "",
         "## 四目标总览（walk-forward 回测）",

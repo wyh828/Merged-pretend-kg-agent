@@ -8,7 +8,7 @@ description: 每日技术趋势 pipeline 运行手册（采集→抽取→对齐
 触发命令（底层 python 解释器用绝对路径，不用坏掉的 `python` 桩）：
 
 ```bash
-E:\conda_envs\techtrend\python.exe cron.py --mode daily --notify
+& 'F:\Predictive agents\.venv\Scripts\python.exe' cron.py --mode daily --notify
 ```
 
 ## 阶段顺序（7+1，共 8 阶段）

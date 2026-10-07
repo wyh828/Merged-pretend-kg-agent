@@ -103,6 +103,11 @@ def concept_share_momentum(
 
     if df is None or df.empty or df.shape[1] < min_months:
         return {}
+    # A full matrix can contain entities appearing only after a backtest origin.
+    # They must not change Laplace denominators or normalization of past scores.
+    df = df.loc[df.sum(axis=1) > 0]
+    if df.empty:
+        return {}
 
     # 每月总活跃量（跨全部 concept），用于份额相对化
     totals = df.sum(axis=0)

@@ -33,7 +33,17 @@ def zscore_rank(scores: dict[str, float]) -> dict[str, float]:
     n = len(items)
     if n == 1:
         return {items[0][0]: 1.0}
-    return {e: (n - 1 - i) / (n - 1) for i, (e, _) in enumerate(items)}
+    result = {}
+    i = 0
+    while i < n:
+        end = i + 1
+        while end < n and items[end][1] == items[i][1]:
+            end += 1
+        rank = (i + end - 1) / 2
+        for entity, _ in items[i:end]:
+            result[entity] = (n - 1 - rank) / (n - 1)
+        i = end
+    return result
 
 
 def fuse(
@@ -67,7 +77,7 @@ def fuse(
         rows.append(
             {"entity": e, "name": names.get(e, ""), "score": score, "burst": b, "tkg": tk, "forecast": f}
         )
-    rows.sort(key=lambda r: r["score"], reverse=True)
+    rows.sort(key=lambda r: (-r["score"], r["entity"]))
     top = rows[:top_k]
     log.info("融合：%d 个实体参与，top-%d = %s", len(rows), len(top), [r["entity"] for r in top[:5]])
     return top

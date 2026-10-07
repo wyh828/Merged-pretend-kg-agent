@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from techtrend.config import PROJECT_ROOT
 
 from techtrend.signal.config import PipelineConfig
 from techtrend.signal.http_client import PoliteApiClient
@@ -19,14 +20,7 @@ class ReportingAgent:
         self.report_path = self.cfg.reports_path / "final_report.md"
         
         # Load environment variables (e.g. from .env)
-        for env_candidate in [
-            self.cfg.data_root.parent / "Attempt" / ".env",
-            self.cfg.data_root.parent / ".env",
-            Path.cwd() / ".env",
-        ]:
-            if env_candidate.exists():
-                load_dotenv(env_candidate)
-                break
+        load_dotenv(PROJECT_ROOT / ".env")
 
     async def _call_deepseek(self, prompt: str) -> str:
         api_key = os.getenv("DEEPSEEK_API_KEY")

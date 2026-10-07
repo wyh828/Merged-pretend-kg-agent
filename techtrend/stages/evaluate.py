@@ -53,13 +53,13 @@ class EvaluateStage(Stage):
                 techpair_rel = {r.strip() for r in s.techpair_relations.split(",") if r.strip()}
                 facts = tp.load_directed_edges(
                     triples, relations=techpair_rel,
-                    min_support=s.techpair_min_support, max_time=max_time,
+                    min_support=1, max_time=max_time,
                 )
             else:
                 # 共现投影（正式主边源，P3 起沿用）
                 facts = tp.project_t2t(
                     triples, relation=s.tkg_relation,
-                    min_cooccur=s.tkg_min_cooccur, max_entities=s.tkg_max_entities,
+                    min_cooccur=1, max_entities=0,
                     doc_types=doc_types, max_time=max_time,
                 )
 
@@ -84,6 +84,8 @@ class EvaluateStage(Stage):
                 "mode": s.eval_mode,
                 "rolling_window_months": s.eval_rolling_window_months,
                 "min_train": s.eval_min_train,
+                "min_support": s.techpair_min_support if s.tkg_edge_source == "directed" else s.tkg_min_cooccur,
+                "max_entities": s.tkg_max_entities,
                 "tkg_dim": s.tkg_embedding_dim,
                 # walk-forward 每折重训，降轮次控计算量（见 P3_OPT 风险「walk-forward 计算量」）
                 "tkg_epochs": max(5, min(s.tkg_epochs, 15)),
@@ -94,24 +96,6 @@ class EvaluateStage(Stage):
             tkg_result = ev.backtest_tkg(facts, cfg_tkg) if facts else {"fold_metrics": [], "n_folds": 0}
             tkg_edge_used = s.tkg_edge_source
             tkg_fallback = None
-            if tkg_result.get("tkg_mrr_mean") is None:
-                # 消融边源（directed）时态跨度不足：近端无事实或单时间组，
-                # walk-forward 无法切出有效折（train 不足 min_train 或 test 为空）。
-                # 回退共现投影（正式主边源，2023→2026 连续时态分布）作 TKG 回测边源，
-                # 报告如实说明。
-                fallback_facts = tp.project_t2t(
-                    triples, relation=s.tkg_relation,
-                    min_cooccur=s.tkg_min_cooccur, max_entities=s.tkg_max_entities,
-                    doc_types=doc_types, max_time=max_time,
-                )
-                tkg_result = ev.backtest_tkg(fallback_facts, cfg_tkg)
-                tkg_edge_used = "cooccur"
-                tkg_fallback = (
-                    f"{s.tkg_edge_source} 边源无有效 walk-forward 折"
-                    f"（时态跨度不足，或 test 实体在 train 无历史被转导协议整体剔除）→ 回退共现投影"
-                )
-                facts = fallback_facts  # leak_check 与 TKG 同一边源，保持一致
-
             # ---- 4. 回归回测（目标③，含 purge）----
             cfg_reg = {
                 "n_splits": s.eval_n_splits,
@@ -140,7 +124,7 @@ class EvaluateStage(Stage):
             citation_metrics = self._run_citation_metrics(s, ev, cfg_reg)
 
             # ---- 6. 无泄漏校验 ----
-            leak = {"ok": False, "violations": [], "test_only_entities_per_fold": []}
+            leak = ev.leak_check([])
             if facts:
                 origins = ev.rolling_origins(
                     [f["time"] for f in facts],
@@ -191,7 +175,19 @@ class EvaluateStage(Stage):
                 "kleinberg_p_at_k_mean": rank_result.get("kleinberg_p_at_k_mean"),
                 "kleinberg_r_at_k_mean": rank_result.get("kleinberg_r_at_k_mean"),
                 "ranking_folds": rank_result.get("fold_metrics", []),
-                "leak_ok": leak["ok"],
+                "leak_ok": leak["ok"] if facts else None,
+                "preprocessing_audit": tkg_result.get("preprocessing", []),
+                "input_audit": {"works_read": len(works), "works_kept": len(valid_works),
+                                "missing_record_bins": monthly.attrs.get("missing_record_bins", []),
+                                "coverage": monthly.attrs.get("coverage", "unverified"),
+                                "historical_entity_alignment": "unverified; requires versioned mappings"},
+                "citation_status": citation_metrics.get("status"),
+                "task_folds": {"links": tkg_result.get("n_folds", 0),
+                               "activity": reg_result.get("n_folds", 0),
+                               "ranking": rank_result.get("n_folds", 0),
+                               "citations": citation_metrics.get("n_folds", 0)},
+                "validation_scope": "event_time retrospective; source availability and revisions unverified",
+                "protocol_version": "causal_01",
             }
             (output_dir / "eval_metrics.json").write_text(
                 json.dumps(eval_metrics, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -221,7 +217,10 @@ class EvaluateStage(Stage):
                 "rotate_mrr_mean": eval_metrics["rotate_mrr_mean"],
                 "rmse_mean": eval_metrics["rmse_mean"],
                 "p_at_k_mean": eval_metrics["p_at_k_mean"],
-                "leak_ok": leak["ok"],
+                "leak_ok": leak["ok"] if facts else None,
+                "preprocessing_audit": tkg_result.get("preprocessing", []),
+                "validation_scope": "event_time retrospective; source availability and revisions unverified",
+                "protocol_version": "causal_01",
             }
         except Exception as exc:  # noqa: BLE001
             log.exception("evaluate 阶段失败")
@@ -244,26 +243,38 @@ class EvaluateStage(Stage):
         from techtrend.prediction.lifecycle import mean_stage_curves
 
         out: dict = {"status": "skipped", "reason": None, "mae": None, "rmse": None, "mape": None,
-                     "n_patents": 0, "n_months": 0, "sampling": None, "s_curve_dist": {}}
+                     "n_patents": 0, "n_months": 0, "sampling": None, "s_curve_dist": {},
+                     "protocol_version": "causal_01", "n_folds": 0,
+                     "forecast_candidate_selection": "training_prefix_per_fold",
+                     "lifecycle_scope": "descriptive_full_history; not_forecast_features"}
+        def finish() -> dict:
+            s.output_dir.mkdir(parents=True, exist_ok=True)
+            (s.output_dir / "citation_metrics.json").write_text(
+                json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+            return out
         path = Path(s.patent_citations_file)
         if not path.exists():
             out["reason"] = "patent_citations.jsonl 不存在（先 collect_sources=patent_citations）"
-            return out
+            return finish()
         facts = read_jsonl(path)
         if not facts:
             out["reason"] = "引用事实为空"
-            return out
+            return finish()
+
+        from datetime import date
+        max_time = s.tkg_max_time or date.today().isoformat()
+        facts = [f for f in facts if f.get("time") and f["time"] <= max_time]
 
         monthly = build_patent_citation_monthly(
-            facts, mode=s.burst_bin, sampling=s.patent_citation_sampling,
-            n_bins=s.patent_citation_n_bins, per_bin=s.patent_citation_per_bin,
+            facts, mode=s.burst_bin, min_citations=1, sampling="all",
         )
         if monthly.empty:
             out["reason"] = "累积引用矩阵为空"
-            return out
+            return finish()
         out["n_patents"] = len(monthly.index)
         out["n_months"] = len(monthly.columns)
-        out["sampling"] = s.patent_citation_sampling
+        out["sampling"] = "all_records_then_training_prefix_per_fold"
+        out["missing_record_bins"] = monthly.attrs.get("missing_record_bins", [])
 
         # 时态跨度不足（< forecast_horizon+2 月）无法回测，仅出 S 曲线分布
         if len(monthly.columns) >= s.forecast_horizon + 2:
@@ -271,12 +282,20 @@ class EvaluateStage(Stage):
             out["mae"] = reg.get("mae_mean")
             out["rmse"] = reg.get("rmse_mean")
             out["mape"] = reg.get("mape_mean")
-            out["status"] = "ok"
+            out["n_folds"] = reg.get("n_folds", 0)
+            out["fold_metrics"] = reg.get("fold_metrics", [])
+            out["status"] = "ok" if out["n_folds"] else "skipped"
+            if not out["n_folds"]:
+                out["reason"] = "无有效回测折：历史/标签/purge 后训练样本不足"
         else:
             out["reason"] = f"引用时态跨度不足（{len(monthly.columns)} 月 < horizon+2），回归跳过"
 
+        descriptive = build_patent_citation_monthly(
+            facts, mode=s.burst_bin, sampling=s.patent_citation_sampling,
+            n_bins=s.patent_citation_n_bins, per_bin=s.patent_citation_per_bin)
+        out["lifecycle_sampling"] = s.patent_citation_sampling
         stages = s_curve_stages(
-            monthly, growth_window=s.lifecycle_growth_window,
+            descriptive, growth_window=s.lifecycle_growth_window,
             emerging_quantile=s.lifecycle_emerging_quantile,
             min_history=s.lifecycle_min_history,
         )
@@ -285,17 +304,14 @@ class EvaluateStage(Stage):
             s.output_dir / "s_curve_stages.csv", index=False, encoding="utf-8-sig"
         )
         # 每阶段一条归一化累积均值曲线（供 P6 可视化叠加图，免重读 1GB 引用文件）
-        curves = mean_stage_curves(monthly, stages)
+        curves = mean_stage_curves(descriptive, stages)
         if not curves.empty:
             curves.to_csv(s.output_dir / "s_curve_curves.csv", encoding="utf-8-sig")
-        (s.output_dir / "citation_metrics.json").write_text(
-            json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
         log.info(
             "专利引用时序：patents=%d months=%d status=%s s_curve=%s",
             out["n_patents"], out["n_months"], out["status"], out["s_curve_dist"],
         )
-        return out
+        return finish()
 
     @staticmethod
     def _write_folds_csv(path, tkg_folds: list[dict]) -> None:
@@ -329,7 +345,8 @@ def _render_report(m: dict) -> str:
         "# P4 验证体系评测报告（walk-forward 回测）",
         "",
         f"- TKG 边源：`{m.get('tkg_edge_source_used') or m.get('edge_source')}`　事实数：{m.get('n_facts')}",
-        f"- 无泄漏校验：{'✅ 通过' if m.get('leak_ok') else '❌ 存在重叠'}",
+        f"- 事实时间边界检查：{'通过' if m.get('leak_ok') else '未验证或存在重叠'}；不等同于历史数据可得性已验证",
+        f"- 前处理协议：{m.get('protocol_version', 'unspecified')}（每折仅训练集拟合筛选）",
         "",
     ]
     if m.get("tkg_fallback_reason"):
@@ -375,8 +392,8 @@ def _render_report(m: dict) -> str:
         f"| Spearman ρ | {_fmt(m.get('spearman_rho_mean'))} ± {_fmt(m.get('spearman_rho_std'))} |",
         f"| Top-1 Lift | {_fmt(m.get('top1_lift_mean'))} ± {_fmt(m.get('top1_lift_std'))} |",
         "",
-        "> 口径：walk-forward 多期回测（expanding window + embargo + purge），四指标齐备、无泄漏、可复现。",
-        "> 排序类指标真值 = 未来窗口活跃度（非负），与图上 MRR（0.9459 级）永不同表比大小。",
+        "> 口径：walk-forward 多期回测；仅已有有效折的目标提供指标。历史字段可得性和修订尚未验证，不能宣称完整无泄漏。",
+        "> 排序类指标真值 = 未来窗口活跃度（非负）；图 MRR、排名与回归误差分别报告。",
         "",
     ]
     return "\n".join(lines)

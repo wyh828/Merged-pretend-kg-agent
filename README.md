@@ -1,193 +1,63 @@
-# tech-trend-kg-agents
+# Predictive Agents：技术趋势预测研究
 
-多源数据驱动的技术趋势预测系统 —— 通过论文/专利/新闻/GitHub 多源数据构建动态知识图谱，多智能体协同预测技术趋势。
+项目根目录：`F:\Predictive agents`。使用论文等多源数据构建时序知识图谱，研究热度增长、新技术关联、专利引用增长；长期记忆与阶段权重迁移仍处于设计阶段。
 
-> 完整方案见 [PROJECT_PLAN.md](PROJECT_PLAN.md)；本阶段（P1）已实现「单源 + 静态 KG + 基线」，实施细节见 [P1_PLAN.md](P1_PLAN.md)。
+## 从哪里开始
 
-## 环境搭建（conda + 完整路径，免 activate）
-
-```bash
-# 1. 建专用环境到 E 盘（Python 3.12）
-conda create -p E:\conda_envs\techtrend python=3.12 -y
-
-# 2. 装依赖（完整路径，不依赖 conda activate）
-E:\conda_envs\techtrend\python.exe -m pip install -r requirements.txt
-
-# 3. 配置（复制模板后填入 OpenAlex key / Neo4j 密码等）
-copy .env.example .env
-```
-
-## Neo4j（P1 起用，本地 Docker）
-
-```bash
-docker run -d --name neo4j-techtrend -p 7474:7474 -p 7687:7687 \
-  -e NEO4J_AUTH=neo4j/<你的密码> -v neo4j_data:/data neo4j:5
-```
-
-> Neo4j 5 不接受默认密码 `neo4j`，需自定义（与 `.env` 的 `NEO4J_PASSWORD` 一致）。
-> 浏览器控制台 `http://localhost:7474`，bolt `bolt://localhost:7687`。
-
-## 运行
-
-```bash
-E:\conda_envs\techtrend\python.exe main.py                    # 跑全部阶段
-E:\conda_envs\techtrend\python.exe main.py --list             # 列出阶段
-E:\conda_envs\techtrend\python.exe main.py --stage collect    # 只跑某阶段
-E:\conda_envs\techtrend\python.exe cron.py                    # 定时入口（P5 接 hermes-agent）
-```
-
-五阶段数据流（P1）：
-
-```
-collect     OpenAlex /works → data/interim/works.jsonl（cursor 增量、按 id 去重）
-extract     结构化三元组抽取（非 LLM）→ data/interim/triples.jsonl + nodes.jsonl
-build_graph triples + nodes → Neo4j（MERGE 幂等 upsert）
-predict     RotatE 链接预测（filtered MRR/Hits@K）+ Kleinberg 突发 → output/baseline_metrics.json
-report      baseline_metrics.json → output/report.md
-```
-
-## 目录结构
-
-```
-main.py / cron.py        入口（CLI / 定时）
-techtrend/               主包
-  config.py              pydantic-settings 配置（读 .env）
-  io.py                  JSONL 读写小工具
-  logging_config.py      统一日志（控制台 + logs/pipeline.log）
-  pipeline.py            阶段编排
-  sources/openalex.py    OpenAlex 客户端（过滤/分页/限速/重试/增量游标）
-  extraction/structured.py  结构化三元组抽取 + 节点注册表
-  graph/neo4j_client.py  Neo4j 驱动封装（约束/幂等 MERGE）
-  graph/loader.py        triples → Neo4j
-  prediction/kleinberg.py  Kleinberg 突发检测（两状态自动机，自实现）
-  prediction/rotatE.py   RotatE 链接预测（pykeen 包装 + 时态/随机切分）
-  prediction/metrics.py  precision@k / recall@k
-  stages/                五个阶段实现
-data/ output/ logs/      运行时目录（gitignore 忽略）
-```
-
-## 阶段归属
-
-| 阶段 | P1 状态 | 实现内容 |
-|---|---|---|
-| collect | ✅ | OpenAlex 单源采集（cursor 增量 + 去重） |
-| extract | ✅ | 结构化三元组抽取（concept/author/institution/citation，非 LLM） |
-| build_graph | ✅ | 写入 Neo4j（四元组 + MERGE 幂等） |
-| predict | ✅ | RotatE 链接预测 + Kleinberg 突发两个基线 |
-| report | ✅ | 最小摘要 report.md |
-
-## 关键实现决策（相对 P1_PLAN 的调整，均有理由）
-
-1. **RotatE 用随机切分而非时态切分**：P1 图谱以 Paper 为头实体，Paper 是「一次性」实体
-   （只在自身发表时间出现），时态切分后 test 实体几乎全不在 train 中，transductive
-   评估退化为空集。静态 KG 嵌入（RotatE）标准做法本就是随机切分（FB15k/WN18 范式）；
-   时态切分保留给 P3 的 TKG 外推。`temporal_split` 仍保留在代码中。
-2. **引用三元组限量**（`EXTRACT_MAX_REFS`，默认 10/篇）：引用论文无元数据且数量爆炸
-   （1000 篇 work 原始 citations 超 11 万条），限量控图谱规模。
-3. **Kleinberg 评估剔除筛选概念**（AI/CS）：它们出现在几乎所有 work，突发排名被无信息占据。
-4. **OpenAlex 分页改用 `page` 偏移**：2026 起 OpenAlex 不再返回 `next_cursor`。
-
-## 下一阶段（P2）
-
-多源（arXiv/USPTO/GDELT/GitHub + RSSHub 中文新闻）+ 动态 KG + 实体对齐 + LLM 抽取
-（DeepSeek API）。详见 [TECH_ROADMAP.md](TECH_ROADMAP.md)。
-
----
-
-# 合并进度与阶段记录（pretend-agent × tech-trend-kg-agents）
-
-> 把「她的信号引擎（相对份额 + 动量 + 排序评估 + 研报叙事）」注入「我的图引擎骨架
-> （Neo4j + TKG + 严格验证）」，并补上双方都缺的「真正的多智能体协同」。逐阶段记录
-> **阻塞问题 → 合并成果 → 后续优化方法**，数字均为本仓种子数据真实重跑结果（非硬编 source 旧数字）。
-
-## 环境阻塞（`--list` 依赖缺口）—— 已解决
-
-- **阻塞现象**：`main.py --list` 在 import 阶段退出，报 `No module named 'tenacity'`。
-- **实况核实**：conda 环境 `E:\conda_envs\techtrend`（Python 3.12）**已装齐主干全部依赖**
-  （tenacity 9.1.4 / pykeen 1.11.1 / neo4j 6.3.1 / feedparser 6.0.14 / RapidFuzz 3.14.6 /
-  scikit-learn 1.9.1 / torch 2.12.1 / numpy / pandas / httpx 等），`import main` 已验证通过。
-  提示中的「缺 tenacity/neo4j…」是**陈旧信息**——实为误用了系统 `py` 3.12.3 而非 conda 解释器所致。
-- **最优解法**：`E:\conda_envs\techtrend\python.exe -m pip install -r requirements.txt`
-  （补齐 aiohttp / apscheduler / pytest 这 3 个，其余已满足）；之后一律用
-  `E:\conda_envs\techtrend\python.exe` 跑，不用裸 `python`/`py`。
-- **证据**：补齐后 `main.py --list` 列出 10 个阶段（含新 `collaborate`）；`pytest tests/` 11 用例全绿。
-
-## 阶段 0 —— 统一仓库 + 引入 `techtrend/signal` 子包（已完成并推送）
-
-- **成果**：双项目并入单仓 `Merged-pretend-kg-agent`，信号侧代码归入 `techtrend/signal/`，`origin/main` 已推送。
-
-## 阶段 1 —— 信号层注入（救目标① p@k=0）
-
-- **成果**：新增 `techtrend/prediction/signal.py` —— Concept 级「相对注意力份额 + EMA/MACD 动量」打分器
-  （`share_t = (count_t+1)/(Total_t+N)` 解头部霸榜；EMA(3)/EMA(6) 求 `relative_growth` 动量），
-  入口与 Kleinberg 同构；`config.fusion_signal_source = "share"` 作消融开关；融合与排名回测均已接线。
-- **阻塞（已修复）**：`_robust_normalize` 在真实数据（5498 concept，频次重尾：大量 0 / 少数巨值）
-  上 IQR 极小 → z 爆炸 → `math.exp(-z)` 抛 `OverflowError`，导致 share/fusion 的 p@k 全为 `null`。
-  修复：sigmoid 前将 z 截断到 `[-35, 35]`（|z|>35 时 sigmoid 已饱和到 0/1，忠实原数学、只补数值稳定性），
-  并新增回归测试 `test_robust_normalize_no_overflow_on_extreme_skew`。
-- **真实结果（诚实口径）**：predict 阶段融合单窗口口径下 `fusion_precision_at_k = 0.0`
-  （与 Kleinberg 基线 `precision_at_k = 0.0` 持平）；walk-forward 排名回测下 share `p@k = 0.0333`
-  vs Kleinberg `p@k = 0.1333`。**结论：Concept 级（5498 概念）份额动量信号并未改善 p@k**——
-  正是 MERGE_PLAN 预留的「Concept 级份额噪声仍使 p@k≈0」情形。
-- **后续优化方法**：按红线「不调到赢」，不硬调参数凑数，启用 MERGE_PLAN 预留的**降级方案**：
-  「退回主题级榜单（5–6 主题粗粒度，信号信噪比更高）+ Concept 级 TKG 外推双层」；并对 Concept 级信号
-  做降噪（最小活跃量阈值、平滑窗口自适应、按学科分桶消除跨域份额污染）后再评。
-
-## 阶段 2 —— 评估体系对齐（补排序指标）
-
-- **成果**：`metrics.py` 新增 `spearman_rho` / `ndcg_at_k` / `top1_lift`；`evaluate` 每折对
-  share-momentum 排名 vs 未来增速真值补算 NDCG@3/5、Spearman ρ、Top-1 Lift；`eval_report.md`
-  新增「排序类指标」分区。
-- **真实数字（walk-forward 3 折）**：
-  - share 排名：`p@k = 0.0333 ± 0.0471`，`NDCG@3 = 0.6423 ± 0.2875`，`NDCG@5 = 0.5225 ± 0.2214`，
-    `Spearman ρ = 0.2151 ± 0.0038`，`Top-1 Lift = 1.3305 ± 1.4415`；
-  - Kleinberg 消融：`p@k = 0.1333`；
-  - 图上指标（分区不混比）：`tkg_mrr = 0.8966 ± 0.0741`，`rmse = 1.7244`，`leak_ok = true`。
-- **口径**：0.8966（图上 TKG MRR）与 0.6423（榜单 NDCG@3）分属两套评估、永不同表比大小。
-- **后续优化方法**：NDCG 高而 p@k 低 → 信号对「序」有信息但对「命中的稀疏真值」召回不足，
-  可引入「概念热度→主题聚合」的软标签扩大正样本，或改用 learning-to-rank 拟合「是否进入下期榜单」。
-
-## 阶段 3 —— 数据源补齐（CrossRef，第 7 源）
-
-- **成果**：新增 `techtrend/sources/crossref.py`（DOI 锚点 + `mailto` polite pool + `cursor=*` 增量游标 +
-  JATS 摘要去标签），与 OpenAlex 以 DOI 强锚点对齐去重；`collect` 已注册 `crossref` 源。
-- **阻塞**：需联网拉取 CrossRef；本次真实重跑未启用该源，代码已编译通过。
-- **后续优化方法**：网络可用时 `--stage collect --source crossref` 冒烟接入；增量游标持久化到
-  `crossref_cursor` 字段做断点续采。
-
-## 阶段 4 —— 报告层统一（DeepSeek 研报叙事）
-
-- **成果**：`stages/report.py` 新增可选 LLM 研报解读（确定性四目标总览 + DeepSeek 榜单解读/回测可靠性/
-  行动建议，写 `report_llm.md`）。
-- **阻塞**：`.env`（含 `LLM_API_KEY`）未随数据拷贝（Sensitive-Source Provenance 拒绝），无 key，
-  报告阶段如实跳过 LLM 并标注「未启用 LLM」，保持确定性回退（`report.md` 正常产出）。
-- **后续优化方法**：提供 key 后走 DeepSeek（OpenAI 兼容接口）把 `fusion_ranking.csv` + `eval_metrics.json`
-  落成研报叙事；接口已预留，无需改代码。
-
-## 阶段 5 —— 多智能体协同（确定性，核心突破点）
-
-- **成果**：新增 `techtrend/orchestration/collab.py`（信号 agent `concept_share_momentum` × 链接预测 agent
-  `cygnet.future_link_scores` 两路独立打分 → `zscore_rank` 归一 → 交叉质证）与 `stages/collaborate.py`
-  （evaluate 之后、notify 之前注册为第 8 阶段），产出 `collab_consensus.json` + `collab_conflicts.json`。
-- **真实结果**：`signal = 5498`、`link = 799`，交叉质证后 `agree = 66`、`signal_only = 2683`、
-  `tkg_only = 334`、`neither = 2560`、`conflicts = 3017`。两路对同一批候选技术给出独立结论 + 可审计共识/冲突。
-- **后续优化方法**：冲突项（signal_only/tkg_only）接入现有 HITL 审校门（`review_enable_hitl`）人工复核；
-  LLM 化协同（双 agent 用 DeepSeek 生成论证再裁决）作为后续，接口在 `collab.py` 已预留。
-
-## 端到端验收汇总
-
-| 验收项 | 结果 |
+| 目的 | 入口 |
 |---|---|
-| `--list` 列出 10 阶段 | ✅（含 `collaborate`） |
-| `pytest tests/` | ✅ 11 passed（信号数学/排名 + 协同质证 + 溢出回归） |
-| `--stage predict` | ✅ `fusion_p@k = 0.0`（诚实：Concept 级信号未改善） |
-| `--stage evaluate` | ✅ 排序指标全产出，`leak_ok = true` |
-| `--stage collaborate` | ✅ agree=66 / conflicts=3017 |
-| `--stage report` | ✅ `report.md` 产出（LLM 因无 key 跳过，已标注） |
+| 日常运行、启动数据库、查看看板 | [简明操作指南](Attempt/docs/DOCUMENTATION_INDEX.md) |
+| 了解当前数据、来源与限制 | [数据准备记录](Attempt/docs/data_preparation_02.md) |
+| 查看共享包准备与发布状态 | [共享方案与进度](Attempt/docs/sharing_plan_00.md) |
+| 理解研究方向 | [研究方向](Attempt/docs/research_direction_01.md) |
+| 查看完整设计 | [项目计划](Resources/plans/PROJECT_PLAN.md) · [技术路线](Resources/plans/TECH_ROADMAP.md) |
+| 查看两项目合并与汇报材料 | [合并计划](Resources/plans/MERGE_PLAN.md) · [对比分析](Resources/reports/COMPARISON_REPORT.md) · [汇报大纲](Resources/reports/REPORT_OUTLINE.md) |
+| 查阅早期阶段与旧结果 | [阶段计划目录](Resources/plans/) · [历史报告目录](Resources/reports/) · [整理前进展记录](Resources/reports/project_history_00.md) |
 
-## 数据诚信声明
+## 当前已验证到哪一步
 
-- 本轮数字全部来自**拷贝种子数据（works.jsonl 14 MB / triples.jsonl 30 MB）真实重跑**，未硬编 source 旧数字。
-- `patent_citations.jsonl`（1.08 GB，仅目标③引用回归/S 曲线）未拷贝，引用相关数字沿用 source 已有值。
-- 每个依赖网络/依赖 key 的步骤均如实标注「未跑通」，不宣称可复现。
+2016–2025 年、26 学科，OpenAlex/Crossref 各覆盖 120 个月；保留 511 份原始响应，5,375 条去重文献，425 条粗日期隔离记录。此前真实入库检查为 **53,687 个实体、62,093 条事件关系**，实体数包含参考文献占位、作者、机构和主题。
 
+这些是数据准备与图谱种子结果。**正式全量预测尚未完成**：当前每学科每年仅 20 条随机种子，专利时序引用缺失，历史分类与引用当时可得性尚未验证。两个来源有重叠，统计量不能相加；固定样本数量不能代表真实热度。上游文档数字作为历史记录保留。
+
+本机已有 Python 3.13.9 的 `.venv`；密码和 API Key 放在忽略的本地 `.env`。看板位于 `output/runs/research_01/dashboard.html`，可离线打开。
+
+```powershell
+Set-Location 'F:\Predictive agents'
+Invoke-Item '.\output\runs\research_01\dashboard.html'
+```
+
+完整流程：`collect → extract → align → build_graph → predict → evaluate → collaborate → report → notify → visualize`。按操作指南逐步检查，前一步失败先修复。
+
+## 文件在哪里
+
+| 目录 | 内容 |
+|---|---|
+| `Resources/plans/` | 总计划、技术路线、合并方案、P0–P6 阶段计划 |
+| `Resources/reports/` | 对比分析、汇报大纲、历史结果 |
+| `Attempt/` | 配置、环境、脚本、函数清单、操作和修订记录 |
+| `techtrend/`、`tests/` | 现有源代码与检查用例 |
+| `Data/Datasets/technology_trends_01/` | 原始响应、整理数据、统计和来源审计 |
+| `Data/Database/neo4j_01/` | Docker Neo4j 挂载的持久数据库文件 |
+| `Data/Exports/` | 版本化共享包，本地生成后作为 Release 附件发布 |
+| `output/runs/research_01/` | 当前看板和生成报告 |
+
+## 上传和共享
+
+本项目使用本机 **LisaZhao0709** 账号，更新目标为 [项目仓库](https://github.com/wyh828/Merged-pretend-kg-agent)。原有 fork 保留，本次使用原仓库远端上传独立审核分支。
+
+A 数据文件、B 图谱备份、C 看板与统计结果计划作为同一版本的三个下载附件。**当前附件尚未生成或发布**；完成验证后，此处补充各自的准确下载链接。
+
+## 最新阶段记录（2026-10-07）
+
+| 阶段 | 阻塞/问题 | 成果与检查 | 后续优化/下一步 |
+|---|---|---|---|
+| 上传账号 | 原仓库权限已开放 | 本机 LisaZhao0709 身份和原仓库写权限核对通过；整理前检查点 `codex/checkpoint-before-sharing-00` | 代码版本与共享附件绑定到同一提交 |
+| 文档组织 | 根目录 19 个 MD 混合设计、历史和操作；看板读取旧路径 | 17 个文档分类迁移，原 README 完整内容单独归档；111 个文档链接有效，看板专项检查通过 | 检查通过后再进行数据导出 |
+| 数据包 A | 原路径绑定本机，需保留来源与许可 | 待生成；原始数据保留 | 相对路径、逐文件校验、解压后检查 |
+| 图谱包 B | 需要匹配 Neo4j 版本与离线导出 | 待导出；Docker Desktop 的通信 socket 报错，备份重建后仍复现 | 在独立空目录恢复，比较实体和事件数 |
+| 看板包 C | 必须继续区分观察统计和未验证预测 | 待生成 | 离线看板与统计表核对 |
+
+此前修订 02 检查为 106 项测试通过、85 模块导入通过；详见 [数据准备记录](Attempt/docs/data_preparation_02.md)。本轮最终全套 116 项测试通过，最终修改专项 15 项通过；86 个模块导入通过，484 个函数记录于新清单，111 个本地文档链接有效。详见 [本次提交说明](Attempt/docs/submission_review_00.md)。共享附件还未完成真实导出与恢复验证。
+
+本轮代码已上传 [审核 PR #1](https://github.com/wyh828/Merged-pretend-kg-agent/pull/1)，本地分支为 `codex/local-sharing-00`。Docker 故障记录见 [启动问题记录](Attempt/docs/docker_recovery_00.md)，A/B/C 附件暂未发布。

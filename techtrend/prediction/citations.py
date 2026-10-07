@@ -22,6 +22,7 @@ from typing import Iterable
 import pandas as pd
 
 from techtrend.prediction.lifecycle import s_curve_stage, s_curve_stages
+from techtrend.prediction.calendar import calendar_bins
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def forward_fact(
     citing = e.get("citing")
     if not cited or not citing or cited == citing:
         return None
-    time = (e.get("citing_date") or "") or (e.get("cited_date") or "")
+    time = e.get("citing_date") or ""
     if not time:
         return None
     if min_time is not None and time < min_time:
@@ -74,7 +75,7 @@ def build_forward_citation_edges(
     {"head": cited, "relation": "cited_by", "tail": citing, "time": citing_date,
      "head_date": cited_date, "source": "patent_citation"}。
 
-    - time 取 citing_date（引用发生时刻）；缺失时用 cited_date 兜底（非精确但可排序）。
+    - time 只取 citing_date（引用事件时刻）；缺失时不允许用被引专利发表日期冒充。
     - min_time/max_time 过滤 time 边界（如 max_time=今天 滤未来坏数据）。
     """
     facts: list[dict] = []
@@ -107,6 +108,10 @@ def _sample_patents(
       低被引箱也保底覆盖（修正「top-N 总被引」系统性排除 emerging/growth 的选样偏）。
     - top_total：旧行为，总被引 top-max_patents。
     """
+    if not eligible:
+        return set()
+    if sampling == "all":
+        return eligible
     if sampling == "stratified":
         import math
 
@@ -142,7 +147,8 @@ def build_patent_citation_monthly(
 
     min_citations：只保留总被引 ≥ N 的专利（滤掉只被引 1 次的噪声，S 曲线需足够数据点）。
     sampling：选样策略（承 P6_PLAN §6.2 / P4_P3_RESULT §5）——
-      "stratified"（分层，默认）让低被引箱也保底覆盖、全谱阶段可观测；"top_total" 旧行为。
+      "stratified" / "top_total" 只用于全史描述；回测使用 "all" + min_citations=1，
+      并在每折内按预测起点之前的累积量另行选择候选，禁止按未来总量抽样。
     max_patents：仅 "top_total" 模式生效（stratified 的上限为 n_bins × per_bin）。
     """
     def _bin(t: str) -> str:
@@ -184,8 +190,13 @@ def build_patent_citation_monthly(
 
     if not rows:
         return pd.DataFrame()
-    df = pd.DataFrame.from_dict(rows, orient="index").ffill(axis=1).fillna(0)
-    return df.reindex(sorted(df.columns), axis=1)
+    df = pd.DataFrame.from_dict(rows, orient="index")
+    observed = sorted({b for bins in cited_bins.values() for b in bins})
+    bins = calendar_bins(observed, mode)
+    result = df.reindex(bins, axis=1).ffill(axis=1).fillna(0)
+    result.attrs["missing_record_bins"] = sorted(set(bins) - set(observed))
+    result.attrs["coverage"] = "recorded_citations_only; availability_unverified"
+    return result
 
 
 # S 曲线阶段分类（目标④）已泛化到 prediction/lifecycle.py（P6），

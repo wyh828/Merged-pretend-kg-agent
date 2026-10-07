@@ -13,7 +13,7 @@ jobs:
     schedule: "0 3 * * *"          # 每日 03:00 本地
     timezone: Asia/Shanghai
     # 动作：外部进程触发统一入口（与 APScheduler 降级完全同构）
-    command: "E:\\conda_envs\\techtrend\\python.exe cron.py --mode daily --notify"
-    working_dir: "E:\\myproject\\tech-trend-kg-agents"
+    command: '"F:/Predictive agents/.venv/Scripts/python.exe" "F:/Predictive agents/cron.py" --mode daily --notify'
+    working_dir: 'F:/Predictive agents'
     # 失败可重试一次，避免瞬时网络抖动导致整日漏跑
     retries: 1

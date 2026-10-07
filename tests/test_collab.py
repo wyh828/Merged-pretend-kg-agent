@@ -2,7 +2,7 @@
 
 只测纯函数（cross_examine 分类逻辑 + signal_agent_scores），不触发 CyGNet 训练。
 运行（仓库根目录）：
-    E:\\conda_envs\\techtrend\\python.exe -m pytest tests/test_collab.py -v
+    F:\\Predictive agents\\.venv\\Scripts\\python.exe -m pytest tests/test_collab.py -v
 """
 from __future__ import annotations
 

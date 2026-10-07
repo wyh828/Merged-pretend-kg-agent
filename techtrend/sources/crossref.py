@@ -13,7 +13,9 @@
 import html
 import logging
 import re
-from typing import Any, Iterable
+from typing import Any, Callable
+import time
+from techtrend.sources.paging import WorksBatch
 
 import httpx
 from tenacity import (
@@ -71,10 +73,15 @@ class CrossrefClient:
         mailto: str | None = None,
         per_page: int = 100,
         timeout: float = 30.0,
+        min_interval: float = 1.0,
+        base_url: str = _BASE_URL,
     ) -> None:
-        self.client = httpx.Client(base_url=_BASE_URL, timeout=timeout)
+        self.client = httpx.Client(base_url=base_url, timeout=timeout,
+                                   headers={"User-Agent": "PredictiveAgents/02"})
         self.mailto = mailto
-        self.per_page = min(per_page, 1000)  # CrossRef rows 上限 1000
+        self.per_page = max(1, min(per_page, 1000))
+        self.min_interval = min_interval
+        self._last_request = 0.0
 
     # ---- 内部请求（带重试）----
     @retry(
@@ -84,6 +91,8 @@ class CrossrefClient:
         reraise=True,
     )
     def _get_page(self, params: dict[str, Any]) -> dict:
+        time.sleep(max(0.0, self.min_interval - (time.monotonic() - self._last_request)))
+        self._last_request = time.monotonic()
         resp = self.client.get("/works", params=params)
         resp.raise_for_status()
         return resp.json()
@@ -95,37 +104,59 @@ class CrossrefClient:
         concept_ids: list[str] | None,
         max_works: int,
     ) -> list[dict]:
-        """按 `from-pub-date` 游标分页拉取 works，直到末页或达 max_works。
+        """Compatibility wrapper; concept filters are not supported by Crossref."""
+        return self.fetch_batch(from_date, concept_ids, max_works).records
 
-        `concept_ids` 在 CrossRef 无对应过滤能力（无受控词表），忽略；保留形参以与
-        OpenAlex 接口对齐。默认排序为 CrossRef 相关性（同 OpenAlex 默认排序的
-        跨时间分布覆盖，保证时间跨度足够供时态切分）。
+    def fetch_batch(self, from_date: str | None, concept_ids: list[str] | None,
+                    max_works: int, *, until_date: str | None = None,
+                    cursor: str = "*", on_page: Callable | None = None) -> WorksBatch:
+        """Bounded publication-ordered cursor paging; incomplete caps stay explicit.
+
+        Crossref cursor tokens may expire after inactivity. A failed resume
+        never advances the date boundary; replaying the window is safe by ID.
         """
+        if max_works <= 0:
+            raise ValueError("max_works must be positive")
+        if concept_ids:
+            raise ValueError("Crossref cannot apply OpenAlex concept filters")
         params: dict[str, Any] = {
-            "rows": self.per_page,
             "select": _SELECT,
-            "cursor": "*",
+            "sort": "published", "order": "asc",
         }
+        filters = []
         if from_date:
-            params["filter"] = f"from-pub-date:{from_date}"
+            filters.append(f"from-pub-date:{from_date}")
+        if until_date:
+            filters.append(f"until-pub-date:{until_date}")
+        if filters:
+            params["filter"] = ",".join(filters)
         if self.mailto:
             params["mailto"] = self.mailto
 
-        works: list[dict] = []
-        while True:
-            data = self._get_page(params)
+        batch = WorksBatch(next_cursor=cursor)
+        while len(batch.records) < max_works:
+            query = {**params, "cursor": batch.next_cursor,
+                     "rows": min(self.per_page, max_works - len(batch.records))}
+            data = self._get_page(query)
             message = data.get("message") or {}
-            results = message.get("items") or []
-            works.extend(results)
-            log.info(
-                "CrossRef 分页：cursor=%s 本页 %d 条，累计 %d/%d",
-                params.get("cursor"), len(results), len(works), max_works,
-            )
+            if not isinstance(message.get("items"), list) or "total-results" not in message:
+                raise ValueError("Crossref response lacks items/total-results")
+            results = message["items"]
+            if len(results) > query["rows"]:
+                raise ValueError("Crossref returned more rows than requested")
             next_cursor = message.get("next-cursor")
-            if not results or len(works) >= max_works or not next_cursor:
+            complete = not results or len(results) < query["rows"] or not next_cursor
+            if on_page:
+                on_page(data, query, next_cursor, complete)
+            batch.records.extend(results)
+            batch.reported_total = message["total-results"]
+            batch.next_cursor = next_cursor
+            batch.complete = complete
+            batch.pages += 1
+            log.info("Crossref page %d: %d rows, complete=%s", batch.pages, len(results), complete)
+            if complete:
                 break
-            params["cursor"] = next_cursor
-        return works[:max_works]
+        return batch
 
     # ---- 归一化 ----
     @staticmethod
@@ -137,7 +168,6 @@ class CrossrefClient:
         pub_date = (
             _date_from_parts(work.get("published"))
             or _date_from_parts(work.get("issued"))
-            or _date_from_parts(work.get("created"))
         )
         return {
             "id": f"doi:{doi.lower()}" if doi else None,
@@ -145,6 +175,10 @@ class CrossrefClient:
             "title": title or None,
             "doi": doi or None,
             "publication_date": pub_date,
+            "date_precision": ("day" if pub_date and len(pub_date) == 10 else
+                               "month" if pub_date and len(pub_date) == 7 else
+                               "year" if pub_date else "unknown"),
+            "registered_date": _date_from_parts(work.get("created")),
             "abstract": _strip_tags(work.get("abstract")),
             "concepts": [
                 {"id": f"crossref:{s}", "name": s, "score": 1.0}

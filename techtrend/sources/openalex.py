@@ -1,13 +1,11 @@
-"""OpenAlex 客户端：过滤 / 分页 / 限速 / 重试 / 增量游标。
+"""OpenAlex works: modern Topics, bounded cursor pages and free optional key.
 
-- 端点 `GET /works`；`mailto` 进 polite pool、`api_key` 进 premium（额度 10×）。
-- 过滤 `from_publication_date:<date>,concepts.id:<ID1|ID2>`；cursor 分页跟随 `next_cursor`。
-- 仅 429/5xx 与传输异常重试（tenacity 指数退避）。
-- `concepts.id` 仍可用（实测）；若日后 OpenAlex 彻底移除 concepts 字段，
-  可把过滤键切到 `primary_topic.id`/`topics.id`（见 P1_PLAN.md 风险说明）。
+Legacy concepts are accepted only when explicitly requested. Default paging
+uses publication order, not present-day citation ranking.
 """
 import logging
-from typing import Any, Iterable
+from typing import Any, Callable
+import time
 
 import httpx
 from tenacity import (
@@ -18,11 +16,12 @@ from tenacity import (
 )
 
 log = logging.getLogger(__name__)
+from techtrend.sources.paging import WorksBatch
 
 _BASE_URL = "https://api.openalex.org"
 _SELECT = (
     "id,doi,title,abstract_inverted_index,publication_date,"
-    "concepts,authorships,referenced_works,cited_by_count"
+    "topics,primary_topic,authorships,referenced_works,cited_by_count"
 )
 
 
@@ -38,20 +37,24 @@ class OpenAlexClient:
         self,
         mailto: str | None = None,
         api_key: str | None = None,
-        per_page: int = 200,
+        per_page: int = 100,
         timeout: float = 30.0,
+        min_interval: float = 1.0,
+        base_url: str = _BASE_URL,
     ) -> None:
         headers: dict[str, str] = {}
-        params: dict[str, Any] = {"per-page": per_page}
+        params: dict[str, Any] = {}
         if mailto:
             headers["User-Agent"] = f"mailto:{mailto}"
             params["mailto"] = mailto
         if api_key:
-            params["api_key"] = api_key
+            headers["Authorization"] = f"Bearer {api_key}"
         self.client = httpx.Client(
-            base_url=_BASE_URL, timeout=timeout, headers=headers, params=params
+            base_url=base_url, timeout=timeout, headers=headers, params=params
         )
-        self.per_page = per_page
+        self.per_page = max(1, min(per_page, 100))
+        self.min_interval = min_interval
+        self._last_request = 0.0
 
     # ---- 内部请求（带重试）----
     @retry(
@@ -61,6 +64,8 @@ class OpenAlexClient:
         reraise=True,
     )
     def _get_page(self, params: dict[str, Any]) -> dict:
+        time.sleep(max(0.0, self.min_interval - (time.monotonic() - self._last_request)))
+        self._last_request = time.monotonic()
         resp = self.client.get("/works", params=params)
         resp.raise_for_status()
         return resp.json()
@@ -72,38 +77,61 @@ class OpenAlexClient:
         concept_ids: list[str] | None,
         max_works: int,
     ) -> list[dict]:
-        """按过滤条件 cursor 分页拉取 works，直到空页或达 max_works。
+        """Compatibility wrapper; callers needing coverage use fetch_batch."""
+        return self.fetch_batch(from_date, concept_ids, max_works).records
 
-        说明：P1 不显式指定 sort，沿用 OpenAlex 默认排序（高被引优先、跨时间分布），
-        保证基线在限定 max_works 内仍能覆盖足够长的时间跨度（供 Kleinberg/时态切分用）。
+    def fetch_batch(self, from_date: str | None, concept_ids: list[str] | None,
+                    max_works: int, *, until_date: str | None = None,
+                    cursor: str = "*", field_ids: list[str] | None = None,
+                    on_page: Callable | None = None) -> WorksBatch:
+        """Consume bounded cursor pages in publication order, without lost rows.
+
+        on_page(payload, query, next_cursor, complete) must persist the page
+        before returning. Legacy concept filters remain opt-in for old configs.
         """
+        if max_works <= 0:
+            raise ValueError("max_works must be positive")
         filters: list[str] = []
         if from_date:
             filters.append(f"from_publication_date:{from_date}")
+        if until_date:
+            filters.append(f"to_publication_date:{until_date}")
         if concept_ids:
             filters.append("concepts.id:" + "|".join(concept_ids))
+        if field_ids:
+            filters.append("primary_topic.field.id:" + "|".join(field_ids))
 
-        params: dict[str, Any] = {"select": _SELECT}
+        params: dict[str, Any] = {"select": _SELECT, "sort": "publication_date:asc"}
         if filters:
             params["filter"] = ",".join(filters)
 
-        works: list[dict] = []
-        page = 1
-        while True:
+        batch = WorksBatch(next_cursor=cursor)
+        while len(batch.records) < max_works:
             page_params = dict(params)
-            page_params["page"] = page
+            page_params["cursor"] = batch.next_cursor
+            size = min(self.per_page, max_works - len(batch.records))
+            page_params["per_page"] = size
             data = self._get_page(page_params)
-            results = data.get("results") or []
-            works.extend(results)
-            log.info(
-                "OpenAlex 分页：page=%d 本页 %d 条，累计 %d/%d",
-                page, len(results), len(works), max_works,
-            )
-            page += 1
-            # 到达 max_works / 空页 / 不足一页（末页）即停
-            if not results or len(works) >= max_works or len(results) < self.per_page:
+            if not isinstance(data.get("results"), list) or not isinstance(data.get("meta"), dict):
+                raise ValueError("OpenAlex response lacks results/meta")
+            results = data["results"]
+            if len(results) > size:
+                raise ValueError("OpenAlex returned more rows than requested")
+            batch.reported_total = data["meta"].get("count")
+            next_cursor = data["meta"].get("next_cursor")
+            complete = not results or len(results) < size or not next_cursor
+            if on_page:
+                on_page(data, page_params, next_cursor, complete)
+            batch.records.extend(results)
+            batch.next_cursor = next_cursor
+            batch.complete = complete
+            batch.pages += 1
+            log.info("OpenAlex page %d: %d rows, complete=%s", batch.pages, len(results), complete)
+            if complete:
                 break
-        return works[:max_works]
+            if next_cursor == page_params["cursor"]:
+                raise ValueError("OpenAlex cursor made no progress")
+        return batch
 
     # ---- 归一化 ----
     @staticmethod
@@ -117,8 +145,11 @@ class OpenAlexClient:
 
     def normalize(self, work: dict) -> dict:
         """字段裁剪 + 归一化（display_name → name）。"""
+        topics = work.get("topics") or []
+        classifications = topics or work.get("concepts") or []
         return {
             "id": work.get("id"),
+            "source": "openalex",
             "title": work.get("title"),
             "publication_date": work.get("publication_date"),
             "doi": work.get("doi"),
@@ -126,8 +157,12 @@ class OpenAlexClient:
             "cited_by_count": work.get("cited_by_count"),
             "concepts": [
                 {"id": c.get("id"), "name": c.get("display_name"), "score": c.get("score")}
-                for c in (work.get("concepts") or [])
+                for c in classifications
             ],
+            "classification_scheme": "openalex_topics" if topics else "legacy_concepts",
+            "primary_topic": work.get("primary_topic"),
+            "topics": topics,
+            "historical_available_at": None,
             "authorships": [
                 {
                     "author": {

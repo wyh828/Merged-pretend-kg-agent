@@ -14,16 +14,16 @@ http:
 # Per-source switches and parameters
 sources:
   openalex:
-    enabled: false         # OpenAlex collector replaced by CrossRef
-    email: research@example.com   # Override via OPENALEX_EMAIL env var for polite pool
+    enabled: false         # Broad aggregation uses prepare_data_02.py
+    email: ""              # Optional real contact via OPENALEX_EMAIL
     dimension: academic
     # api_key: read from OPENALEX_API_KEY env var (free at openalex.org/settings/api)
   crossref:
     enabled: true
-    mailto: research@example.com   # Override via CROSSREF_MAILTO env var for polite pool
+    mailto: ""             # Optional real contact via CROSSREF_MAILTO
     dimension: academic
   arxiv:
-    enabled: false        # Disabled: export.arxiv.org returns 429 rate limits without API key
+    enabled: false        # Previously rate-limited; recheck in a separate coverage run
     dimension: academic
     # arXiv API is free, no key needed. 3-second min_interval enforced in collector.
   uspto:

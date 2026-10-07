@@ -59,7 +59,8 @@ def _parse_json(content: str) -> dict | None:
         if text.startswith("json"):
             text = text[4:]
     try:
-        return json.loads(text)
+        parsed = json.loads(text)
+        return parsed if isinstance(parsed, dict) else None
     except json.JSONDecodeError:
         # 兜底：取首个 { ... } 块
         start = text.find("{")
@@ -156,12 +157,16 @@ class LLMExtractor:
             return []
         data = _parse_json(content) or {}
         pairs = data.get("pairs") or []
+        if not isinstance(pairs, list):
+            return []
         out: list[dict] = []
         seen: set[tuple] = set()
         for p in pairs:
             if not isinstance(p, dict):
                 continue
-            head = (p.get("head") or "").strip()
+            if not all(isinstance(p.get(k), str) for k in ("head", "relation", "tail")):
+                continue
+            head = p["head"].strip()
             relation = p.get("relation")
             tail = (p.get("tail") or "").strip()
             if relation not in allowed:
@@ -196,7 +201,11 @@ class LLMExtractor:
         """白名单过滤 + 去重（关系/实体类型 + tail 名）。"""
         seen: set[tuple] = set()
         out: list[dict] = []
+        if not isinstance(triples, list):
+            return []
         for t in triples:
+            if not isinstance(t, dict) or not all(isinstance(t.get(k), str) for k in ("relation", "tail", "tail_type")):
+                continue
             relation = t.get("relation")
             tail = (t.get("tail") or "").strip()
             tail_type = t.get("tail_type")

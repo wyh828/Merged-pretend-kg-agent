@@ -1,4 +1,4 @@
-"""项目入口：`python main.py` 跑全量 pipeline（P4 七阶段）。
+"""项目入口：`python main.py` 按配置顺序运行各阶段。
 
 用法：
     python main.py                 # 跑全部阶段
@@ -12,6 +12,7 @@ from techtrend.config import get_settings
 from techtrend.logging_config import setup_logging
 from techtrend.pipeline import Pipeline
 from techtrend.stages import get_default_stages
+from techtrend.storage import snapshot_outputs
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -46,12 +47,13 @@ def run_full(args, settings) -> int:
             log.error("未知阶段：%s（可用 --list 查看）", args.stage)
             return 1
         log.info("单阶段运行：%s", stage.name)
-        stage.run()
-        return 0
+        snapshot_outputs(settings.output_dir, f"stage:{stage.name}")
+        result = stage.run()
+        return 1 if result.get("status") == "error" else 0
 
     pipeline = Pipeline(settings)
-    pipeline.run()
-    return 0
+    results = pipeline.run()
+    return 1 if any(r.get("status") == "error" for r in results) else 0
 
 
 if __name__ == "__main__":

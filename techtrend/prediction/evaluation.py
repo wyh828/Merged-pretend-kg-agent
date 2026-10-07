@@ -118,10 +118,12 @@ def leak_check(folds: list[tuple[list[dict], list[dict]]]) -> dict:
     """
     violations: list[dict] = []
     test_only_per_fold: list[dict] = []
+    checked_folds = 0
     for i, (train, test) in enumerate(folds):
         train_months = [_month_of(t.get("time")) for t in train if _month_of(t.get("time"))]
         test_months = [_month_of(t.get("time")) for t in test if _month_of(t.get("time"))]
         if train_months and test_months:
+            checked_folds += 1
             max_train = max(train_months)
             min_test = min(test_months)
             if max_train >= min_test:
@@ -141,7 +143,9 @@ def leak_check(folds: list[tuple[list[dict], list[dict]]]) -> dict:
             }
         )
     return {
-        "ok": len(violations) == 0,
+        "ok": not violations if checked_folds else None,
+        "checked_folds": checked_folds,
+        "scope": "fact_event_time_boundary_only; not_source_availability",
         "violations": violations,
         "test_only_entities_per_fold": test_only_per_fold,
     }
@@ -156,9 +160,9 @@ def purge_label_overlap(
     """剔除 label 窗口 [t, t+horizon) 与测试窗口重叠的训练样本。
 
     samples: [(t_idx, label)]，t_idx 为特征时间箱下标（lag 特征起点），label = mean(series[t:t+horizon])。
-    保留条件：t + horizon < test_start_idx - purge（label 结束早于测试起点且留 purge 缓冲）。
+    保留条件：t + horizon <= test_start_idx - purge（右开标签窗口不与测试重叠）。
     """
-    return [s for s in samples if s[0] + horizon < test_start_idx - purge]
+    return [s for s in samples if s[0] + horizon <= test_start_idx - purge]
 
 
 # ---------------------------------------------------------------------------
@@ -225,7 +229,17 @@ def backtest_tkg(facts: list[dict], cfg: dict) -> dict:
         facts, origins, cfg["embargo_months"], cfg["mode"], cfg["rolling_window_months"],
     )
     fold_metrics: list[dict] = []
+    from techtrend.prediction.temporal import fit_graph_scope, apply_graph_scope
+    preprocessing = []
     for i, (train, test) in enumerate(folds):
+        scope = fit_graph_scope(train, min_support=cfg.get("min_support", 1), max_entities=cfg.get("max_entities", 0))
+        raw_train, raw_test = len(train), len(test)
+        train = apply_graph_scope(train, scope, training=True)
+        test = apply_graph_scope(test, scope)
+        preprocessing.append({"fold": i, "fit_end": scope["fit_end"], "test_start": origins[i][0],
+                              "fit_on": "train_only", "entities": len(scope["entities"]),
+                              "raw_train": raw_train, "raw_test": raw_test,
+                              "kept_train": len(train), "kept_test": len(test)})
         if len(train) < cfg["min_train"] or not test:
             log.warning(
                 "TKG 折 %d 训练/测试事实不足，跳过（train=%d, test=%d）",
@@ -242,6 +256,7 @@ def backtest_tkg(facts: list[dict], cfg: dict) -> dict:
          "copyonly_mrr", "rotate_mrr"],
     )
     result["origins"] = origins
+    result["preprocessing"] = preprocessing
     log.info(
         "TKG 回测：%d/%d 折完成，tkg_mrr mean=%.4f±%.4f",
         len(fold_metrics), len(origins),
@@ -265,10 +280,11 @@ def _regression_fold(monthly: pd.DataFrame, test_start: str, cfg: dict) -> dict 
 
     # 测试预测起点 = 第一个 >= test_start 的月份（右开区间外的第一个）
     t0 = next((j for j, c in enumerate(cols) if c >= test_start), None)
-    if t0 is None or t0 + horizon > len(cols):
+    if t0 is None or t0 < min_history or t0 + horizon > len(cols):
         return None  # 未来数据不足，跳过该折
 
-    totals = monthly.sum(axis=1)
+    totals = monthly.iloc[:, :t0].sum(axis=1)
+    totals = totals[totals > 0]
     selected = totals.sort_values(ascending=False).head(top_k).index.tolist()
 
     X_all: list[np.ndarray] = []
@@ -314,6 +330,9 @@ def _regression_fold(monthly: pd.DataFrame, test_start: str, cfg: dict) -> dict 
         "mape": mape(test_actuals, preds),
         "n_train_samples": len(X_all),
         "n_test_entities": len(test_feats),
+        "selected_entities": [str(cid) for cid in selected],
+        "selection_end": cols[t0 - 1],
+        "train_label_end_exclusive": cols[t0 - purge] if t0 - purge >= 0 else None,
     }
 
 
@@ -329,7 +348,7 @@ def backtest_regression(monthly: pd.DataFrame, cfg: dict) -> dict:
     # 回归预测的是 [test_start, test_start+horizon) 的未来 horizon 月（列），预测起点 t0
     # 必须满足 t0+horizon <= len(cols)，否则越界导致所有折被跳过（rolling_origins 锚在
     # 最后一月，落在未来无数据处）。因此 origin 锚定在最后一个合法预测起点 len(cols)-horizon，
-    # 向前按 step 个「有数据的月列」回退（月列 ≈ 月，缺口数据下按列更稳健）。
+    # 向前按 step 个日历月回退；矩阵构建已补齐事件缺月，数据覆盖另行记录。
     last_t0 = len(cols) - horizon
     t0s = [last_t0 - i * step for i in range(n_splits) if last_t0 - i * step >= 0]
     origins = [(cols[t0], None) for t0 in reversed(t0s)]
@@ -370,7 +389,10 @@ def _ranking_fold(
     top_k = cfg["top_k"]
 
     hist_df = monthly[hist_cols]
-    combined = monthly[hist_cols + fut_cols]
+    hist_df = hist_df.loc[hist_df.sum(axis=1) > 0]
+    if hist_df.empty:
+        return None
+    combined = monthly.loc[hist_df.index, hist_cols + fut_cols]
     n_fut = len(fut_cols)
 
     # 消融基线：Kleinberg 突发排名（目标①原信号，p@k=0 的来源）
@@ -400,6 +422,8 @@ def _ranking_fold(
         "kleinberg_r_at_k": recall_at_k(kleinberg_ranked, truth, top_k),
         "n_hist_months": len(hist_cols),
         "n_test_months": len(fut_cols),
+        "candidate_scope": "entities_observed_before_origin",
+        "cold_start_entities": int((monthly[hist_cols].sum(axis=1) == 0).sum()),
     }
 
 

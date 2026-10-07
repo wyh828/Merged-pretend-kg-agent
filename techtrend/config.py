@@ -1,16 +1,26 @@
 """集中配置：pydantic-settings 从 .env 读取，全部字段有默认值。
 
-保证无 .env、无任何 key 时 `python main.py` 也能干净跑通。
+无密钥时可加载配置和生成空状态看板；全量运行仍需要数据与外部服务。
 """
 from functools import lru_cache
+import os
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def resolve_project_path(value: str | Path) -> Path:
+    """Resolve a configured local path against the checkout, without creating it."""
+    path = Path(value).expanduser()
+    return path.resolve() if path.is_absolute() else (PROJECT_ROOT / path).resolve()
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -19,24 +29,31 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     output_dir: Path = Path("output")
     log_dir: Path = Path("logs")
+    cache_dir: Path = Path("data/cache")
     log_level: str = "INFO"
 
     # ---- 信号层（阶段0 合并引入：her 的「话题/源配置层」接入点，只读指针）----
     signal_topics_path: str = "techtrend/signal/configs/topics.yaml"
     signal_sources_path: str = "techtrend/signal/configs/sources.yaml"
+    data_preparation_config: str = "Attempt/configs/data_preparation_02.yaml"
+    collection_start_date: str = "2016-01-01"
+    collection_end_date: str = "2025-12-31"
 
     # Neo4j（P1 起用）
     neo4j_uri: str = "bolt://localhost:7687"
     neo4j_user: str = "neo4j"
     neo4j_password: str = "neo4j"
+    neo4j_database: str = "neo4j"
+    neo4j_write_batch_size: int = 500
 
     # OpenAlex 采集
-    openalex_mailto: str | None = None      # 进 polite pool（可选）
-    openalex_api_key: str | None = None     # premium key（可选，额度 10×）
-    openalex_from_date: str | None = None   # 增量起点，如 "2023-01-01"（首次无游标时的种子）
-    openalex_concept_ids: str = "C154945302,C41008148"  # 逗号分隔（AI/CS）
+    openalex_mailto: str | None = None      # 可选真实联系方式
+    openalex_api_key: str | None = None     # 免费 key 可提升免费日额度；可不填
+    openalex_from_date: str | None = None   # 显式窗口起点；默认继承 collection_start_date
+    openalex_concept_ids: str = ""  # 空值包含全部学科；旧概念过滤仅作显式对照
+    openalex_field_ids: str = ""    # 新版 primary_topic.field.id；空值不限学科
     openalex_max_works: int = 1000
-    openalex_per_page: int = 200
+    openalex_per_page: int = 100
 
     # CrossRef（阶段 3 合并，第 7 源；DOI 锚点 + mailto polite pool + 增量游标）
     crossref_mailto: str | None = None        # 进 polite pool（推荐填真实邮箱）
@@ -86,7 +103,7 @@ class Settings(BaseSettings):
     patent_citation_source: str = "uspto_local"  # 引用数据来源：uspto_local(本地 XML 抽取) | patentsview(bulk 下载) | bigquery(解析导出 CSV)
     patent_citation_max_edges: int = 2000000     # 本地 XML 抽取后向引用对上限（控内存/耗时）
     patent_citation_min_time: str | None = None  # 前向引用时态下界（如 "2010-01-01"；None=不设下界，含全部年份）
-    patent_citation_max_patents: int = 5000      # 只保留被引次数 top-N 的奠基专利（控图规模 + 保留高重复结构）
+    patent_citation_max_patents: int = 0         # 0=不按未来总引用选样；正数旧口径会被采集阶段拒绝
     patent_citations_file: str = "data/interim/patent_citations.jsonl"  # 前向引用图产物（head=被引专利, relation=cited_by, tail=引用专利, time=引用日）
 
     # TLogic 规则层
@@ -127,7 +144,7 @@ class Settings(BaseSettings):
     semantic_scholar_key: str | None = None
 
     # 多源采集开关（P2，逗号分隔；去掉某源即跳过）
-    collect_sources: str = "openalex,arxiv,uspto,gdelt,github,rsshub"
+    collect_sources: str = "openalex,crossref"
 
     # arXiv（OAI-PMH / Atom）
     arxiv_from_date: str | None = None
@@ -228,8 +245,50 @@ class Settings(BaseSettings):
     weekly_window_days: int = 7              # 聚合最近 N 天 manifest
     weekly_report_file: str = "output/weekly_report.md"
 
+    @model_validator(mode="after")
+    def resolve_local_paths(self) -> "Settings":
+        """Anchor storage and config paths to this checkout, independent of CWD.
+
+        data/... and output/... follow DATA_DIR and OUTPUT_DIR overrides;
+        absolute paths are preserved. Bare report names belong to output_dir.
+        """
+        for name in ("data_dir", "output_dir", "log_dir"):
+            setattr(self, name, resolve_project_path(getattr(self, name)))
+        cache = Path(self.cache_dir).expanduser()
+        if not cache.is_absolute() and cache.parts and cache.parts[0] == "data":
+            cache = self.data_dir.joinpath(*cache.parts[1:])
+        self.cache_dir = resolve_project_path(cache)
+        for name in (
+            "signal_topics_path", "signal_sources_path", "data_preparation_config", "uspto_raw_dir",
+            "patent_citations_file", "run_manifest_file", "viz_dashboard_file",
+            "viz_charts_dir", "weekly_report_file",
+        ):
+            path = Path(getattr(self, name)).expanduser()
+            if not path.is_absolute():
+                if path.parts and path.parts[0] == "data":
+                    path = self.data_dir.joinpath(*path.parts[1:])
+                elif path.parts and path.parts[0] == "output":
+                    path = self.output_dir.joinpath(*path.parts[1:])
+                elif name in ("run_manifest_file", "viz_dashboard_file", "viz_charts_dir", "weekly_report_file") and path.parent == Path("."):
+                    path = self.output_dir / path
+                else:
+                    path = resolve_project_path(path)
+            setattr(self, name, str(path.resolve()))
+        return self
+
 
 @lru_cache
 def get_settings() -> Settings:
     """返回缓存的 Settings 单例。"""
     return Settings()
+
+
+def configure_model_storage() -> None:
+    """Set dependency cache defaults before importing PyKEEN; respect explicit overrides."""
+    cache = get_settings().cache_dir
+    for key, subdir in (
+        ("PYSTOW_HOME", "pystow"), ("PYKEEN_HOME", "pykeen"),
+        ("TORCH_HOME", "torch"), ("HF_HOME", "huggingface"),
+    ):
+        value = os.environ.get(key)
+        os.environ[key] = str(resolve_project_path(value) if value else cache / subdir)

@@ -28,20 +28,25 @@ class CrossrefCollector(MonthCountCollector):
     base_url = CROSSREF_BASE_URL
 
     def build_params(self, query: str, date_start: str, date_end: str, contact: str) -> dict[str, Any]:
-        return {
+        params = {
             "query": query,
             "filter": f"from-pub-date:{date_start},until-pub-date:{date_end}",
             "rows": 1,
-            "mailto": contact,
         }
+        if contact:
+            params["mailto"] = contact
+        return params
 
     def parse_count(self, response: CachedResponse) -> int:
         message = response.payload.get("message", {}) if isinstance(response.payload, dict) else {}
-        return int(message.get("total-results", 0))
+        value = message.get("total-results")
+        if type(value) is not int or value < 0:
+            raise ValueError("Crossref response lacks a valid total-results")
+        return value
 
     def resolve_contact(self, source_cfg: dict[str, Any]) -> str:
         env_name = source_cfg.get("mailto_env", "CROSSREF_MAILTO")
-        return os.getenv(env_name, source_cfg.get("mailto", "research@example.com"))
+        return os.getenv(env_name, source_cfg.get("mailto", ""))
 
     def get_topic_query(self, topic: Any) -> str:
         return topic.crossref_query or topic.openalex_query

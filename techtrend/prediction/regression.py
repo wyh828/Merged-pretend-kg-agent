@@ -37,7 +37,8 @@ def run_regression(
 ) -> dict:
     """对最活跃 top-k 个 Concept 的月度活动序列做回测。
 
-    用「前 N-horizon 月」的滞后特征训练 HistGradientBoosting（跨实体共享一个模型），
+    预测起点为 N-horizon；训练特征及其完整标签均截止于该起点之前，
+    候选实体也仅按该起点之前的活动量选择（跨实体共享一个模型）。
     预测「后 horizon 月月均」，与真实值比对得 MAE/RMSE/MAPE（聚合，逐实体见 forecasts）。
     返回 {"mae","rmse","mape","forecasts":[{entity_id,name,recent_mean,forecast,actual}]}。
     """
@@ -55,8 +56,13 @@ def run_regression(
 
     from sklearn.ensemble import HistGradientBoostingRegressor
 
-    # 取最活跃 top-k 实体（按总活动量）
-    totals = monthly.sum(axis=1)
+    # Forecast origin is before the held-out horizon. Entity selection and
+    # every training label must be observable strictly before this origin.
+    origin = monthly.shape[1] - horizon
+    if origin < lag or horizon < 1 or lag < 1:
+        return empty
+    totals = monthly.iloc[:, :origin].sum(axis=1)
+    totals = totals[totals > 0]
     selected = totals.sort_values(ascending=False).head(top_k).index.tolist()
 
     X_all: list[np.ndarray] = []
@@ -71,15 +77,15 @@ def run_regression(
         L = len(series)
         if L < min_history + horizon:
             continue
-        # 训练窗口：t ∈ [lag, L-horizon]，y = 未来 horizon 月月均
-        for t in range(lag, L - horizon):
+        # A label [t, t+horizon) is known only when t+horizon <= origin.
+        for t in range(lag, origin - horizon + 1):
             X_all.append(series[t - lag : t])
             y_all.append(float(series[t : t + horizon].mean()))
         # 测试窗口：预测最后 horizon 月月均
         test_feats.append(series[L - horizon - lag : L - horizon])
         test_cids.append(str(cid))
         test_actuals.append(float(series[L - horizon : L].mean()))
-        test_recent.append(float(series[L - lag :].mean()))
+        test_recent.append(float(series[origin - lag : origin].mean()))
 
     if len(X_all) < 2 or not test_feats:
         log.warning("有效回归样本不足（train=%d, test=%d），回归跳过", len(X_all), len(test_feats))
@@ -109,6 +115,10 @@ def run_regression(
         "rmse": rmse(test_actuals, preds),
         "mape": mape(test_actuals, preds),
         "forecasts": forecasts,
+        "audit": {"origin": str(monthly.columns[origin]),
+                  "selection_end": str(monthly.columns[origin - 1]),
+                  "train_label_end_exclusive": str(monthly.columns[origin]),
+                  "selected_entities": [str(cid) for cid in selected]},
     }
     log.info(
         "指标回归：top-%d 实体（%d 可预测）→ MAE=%.4f, RMSE=%.4f, MAPE=%.4f",

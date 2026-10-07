@@ -22,7 +22,8 @@ class BuildGraphStage(Stage):
                 log.warning("triples.jsonl 为空，请先运行 --stage extract")
                 return {"stage": self.name, "status": "ok", "nodes": 0, "edges": 0}
 
-            client = Neo4jClient(s.neo4j_uri, s.neo4j_user, s.neo4j_password)
+            client = Neo4jClient(s.neo4j_uri, s.neo4j_user, s.neo4j_password,
+                                  database=s.neo4j_database, batch_size=s.neo4j_write_batch_size)
             try:
                 client.verify_connectivity()
                 result = load_triples(client, triples, nodes)

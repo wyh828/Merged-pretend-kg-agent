@@ -3,9 +3,12 @@
 - 唯一约束改在 `entity_id`（每 label 一条）；`openalex_id` 等降为来源溯源属性。
 - 节点 label 取节点 `type`，边 label 由 triples 的 `head_type`/`tail_type` 决定，
   关系类型由 `_RELATION_TYPES` 白名单映射（均为静态白名单，安全拼进 Cypher）。
-- 一次性迁移：DROP P1 的 openalex_id 约束后建 entity_id 约束（重复运行幂等）。
+- 日常建库只增加约束；旧库迁移须单独审查，不能自动删除旧约束。
 """
 import logging
+import hashlib
+import json
+from collections import defaultdict
 from typing import Any, Iterable
 
 from neo4j import GraphDatabase
@@ -32,25 +35,23 @@ _RELATION_TYPES: dict[str, str] = {
 }
 _EDGE_TYPES = tuple(_RELATION_TYPES.values())
 
-# P1 遗留约束（迁移时先 DROP）
-_LEGACY_CONSTRAINTS = ("paper_id", "concept_id", "author_id", "institution_id")
-
 _DOC_LABELS = {"Paper", "Patent", "Repo", "News"}
 
 
 class Neo4jClient:
-    def __init__(self, uri: str, user: str, password: str) -> None:
+    def __init__(self, uri: str, user: str, password: str, database: str = "neo4j", batch_size: int = 500) -> None:
+        if batch_size < 1:
+            raise ValueError("batch_size must be positive")
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
+        self.database = database
+        self.batch_size = batch_size
 
     def verify_connectivity(self) -> None:
         self.driver.verify_connectivity()
 
     def create_schema(self) -> None:
-        """迁移旧约束 + 建每 label 的 entity_id 唯一约束 + Concept.name 索引。"""
-        with self.driver.session() as session:
-            for name in _LEGACY_CONSTRAINTS:
-                session.run(f"DROP CONSTRAINT {name} IF EXISTS")
-            session.run("DROP INDEX concept_name IF EXISTS")
+        """增加 entity_id 唯一约束和索引，不删除或迁移已有数据。"""
+        with self.driver.session(database=self.database) as session:
             for label in _NODE_LABELS:
                 session.run(
                     f"CREATE CONSTRAINT {label.lower()}_entity_id IF NOT EXISTS "
@@ -97,41 +98,36 @@ class Neo4jClient:
         triples = list(triples)
         nodes = list(nodes or [])
 
-        def do_write(tx) -> None:
-            for n in nodes:
-                props = self._node_props(n)
-                if props is None:
-                    continue
-                label = n.get("type")
-                tx.run(
-                    f"MERGE (x:{label} {{entity_id: $eid}}) SET x += $props",
-                    eid=n.get("entity_id"),
-                    props=props,
-                )
-            for t in triples:
-                rel = _RELATION_TYPES.get(t.get("relation"))
-                if rel is None:
-                    continue
-                hlabel = t.get("head_type")
-                tlabel = t.get("tail_type")
-                if hlabel not in _NODE_LABELS or tlabel not in _NODE_LABELS:
-                    continue
-                q = (
-                    f"MERGE (h:{hlabel} {{entity_id: $hid}}) "
-                    f"MERGE (t:{tlabel} {{entity_id: $tid}}) "
-                    f"MERGE (h)-[r:{rel}]->(t) "
-                    f"SET r.time = $time, r.source = $source"
-                )
-                tx.run(
-                    q,
-                    hid=t.get("head_id") or t.get("head"),
-                    tid=t.get("tail_id") or t.get("tail"),
-                    time=t.get("time"),
-                    source=t.get("source"),
-                )
+        node_groups, edge_groups = defaultdict(list), defaultdict(list)
+        for n in nodes:
+            props = self._node_props(n)
+            if props is not None and n.get("entity_id"):
+                node_groups[n["type"]].append({"eid": n["entity_id"], "props": props})
+        for t in triples:
+            rel = _RELATION_TYPES.get(t.get("relation"))
+            hlabel, tlabel = t.get("head_type"), t.get("tail_type")
+            hid, tid = t.get("head_id") or t.get("head"), t.get("tail_id") or t.get("tail")
+            if not rel or hlabel not in _NODE_LABELS or tlabel not in _NODE_LABELS or not hid or not tid:
+                continue
+            edge_groups[hlabel, rel, tlabel].append({"hid": hid, "tid": tid, "event_id": self._event_id(t),
+                **{k: t.get(k) for k in ("time", "source", "dataset_version", "available_at", "evidence_id", "collected_at")}})
 
-        with self.driver.session() as session:
-            session.execute_write(do_write)
+        with self.driver.session(database=self.database) as session:
+            # A failed chunk leaves earlier chunks committed. Replaying is
+            # idempotent by node/event IDs and never removes prior evidence.
+            for label, rows in node_groups.items():
+                query = f"UNWIND $rows AS row MERGE (x:{label} {{entity_id: row.eid}}) SET x += row.props"
+                self._write_batches(session, query, rows)
+            for (hlabel, rel, tlabel), rows in edge_groups.items():
+                query = ("UNWIND $rows AS row "
+                         f"MERGE (h:{hlabel} {{entity_id: row.hid}}) "
+                         f"MERGE (t:{tlabel} {{entity_id: row.tid}}) "
+                         f"MERGE (h)-[r:{rel} {{event_id: row.event_id}}]->(t) "
+                         "ON CREATE SET r.recorded_at = datetime() "
+                         "SET r.time = row.time, r.source = row.source, r.dataset_version = row.dataset_version "
+                         "SET r.evidence_id = row.evidence_id, r.collected_at = row.collected_at "
+                         "SET r.available_at = coalesce(r.available_at, row.available_at)")
+                self._write_batches(session, query, rows)
             node_count = session.run(
                 f"MATCH (n) WHERE {' OR '.join('n:' + l for l in _NODE_LABELS)} "
                 "RETURN count(n)"
@@ -142,6 +138,20 @@ class Neo4jClient:
             ).single()[0]
         log.info("Neo4j upsert 完成：nodes=%d, edges=%d", node_count, edge_count)
         return int(node_count), int(edge_count)
+
+    def _write_batches(self, session, query: str, rows: list[dict]) -> None:
+        """Consume each bounded transaction before advancing; errors propagate."""
+        for start in range(0, len(rows), self.batch_size):
+            batch = rows[start:start + self.batch_size]
+            session.execute_write(lambda tx: tx.run(query, rows=batch).consume())
+
+    @staticmethod
+    def _event_id(triple: dict) -> str:
+        """Keep distinct dated/source/versioned evidence, idempotent across reruns."""
+        values = [triple.get("head_id") or triple.get("head"), triple.get("relation"),
+                  triple.get("tail_id") or triple.get("tail"), triple.get("time"),
+                  triple.get("source"), triple.get("dataset_version"), triple.get("evidence_id")]
+        return hashlib.sha256(json.dumps(values, ensure_ascii=False).encode("utf-8")).hexdigest()
 
     def close(self) -> None:
         self.driver.close()

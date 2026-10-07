@@ -7,7 +7,7 @@
   要求 T1 < T3 且 T2 < T3（时序优先：体先于头发生）。
 
 定向多关系图（uses/improves/compares/targets/competes）下，规则空间按关系展开，
-三类规则（除 implication 外均带时序约束，head 时间晚于 body）：
+三类规则（symmetry / implication 为训练集统计关联；transitivity 要求头边晚于两条体边）：
 
 - symmetry[r]      ：(X r Y) → (Y r X)   同关系反向边（competes/compares 近似对称）。
 - implication[r1,r2]：(X r1 Y) → (X r2 Y)  同边不同关系（improves→uses 语义蕴含）。
@@ -17,6 +17,7 @@
 CyGNet 才是达标主力，本模块定位为解释层 + 对照。
 """
 import logging
+import re
 from collections import defaultdict
 from typing import Iterable
 
@@ -131,20 +132,46 @@ def score_candidates(
 ) -> dict[str, float]:
     """对查询 (s, r, ?, t) 沿规则做带时间约束的图游走，匹配规则置信度之和为候选分。
 
-    graph：{"out": {X: {Y: time}}, "edge_time": {(X,Y): time}}（见 :func:`_min_edge_times`）。
+    graph 优先提供 {"edge_time": {(X,relation,Y): time}}；旧单关系
+    {"out": {X: {Y: time}}} 仍支持，所有边均按查询关系 r 解释。
+    symmetry 从入边推反向边；implication 按目标关系匹配；两跳的两条体边均须早于 t。
     返回 {candidate_entity_id: score}。
     """
-    conf = {rule["label"]: rule["confidence"] for rule in rules}
-    out = graph.get("out", {})
+    out = defaultdict(lambda: defaultdict(dict))
+    incoming = defaultdict(lambda: defaultdict(dict))
+    edges = graph.get("edge_time", {})
+    if edges:
+        for key, time in edges.items():
+            head, relation, tail = key if len(key) == 3 else (key[0], r, key[1])
+            out[head][relation][tail] = time
+            incoming[tail][relation][head] = time
+    else:
+        for head, neighbors in graph.get("out", {}).items():
+            for tail, time in neighbors.items():
+                out[head][r][tail] = time
+                incoming[tail][r][head] = time
     scores: dict[str, float] = defaultdict(float)
-
-    # 1-hop 对称性：直接邻居（时间 < t）
-    for y, t_xy in out.get(s, {}).items():
-        if t_xy < t:
-            scores[y] += conf.get("symmetry", 0.0)
-        # 2-hop 传递性：经 y 到 z（两端时间均 < t）
-        for z, t_yz in out.get(y, {}).items():
-            if z != s and t_yz < t:
-                scores[z] += conf.get("transitivity", 0.0)
+    for rule in rules:
+        label = rule.get("label", "")
+        confidence = float(rule.get("confidence", 0.0))
+        symmetry = re.fullmatch(r"symmetry\[(.+)\]", label)
+        implication = re.fullmatch(r"implication\[(.+)->(.+)\]", label)
+        transitivity = re.fullmatch(r"transitivity\[(.+),(.+)\]", label)
+        if label == "symmetry" or (symmetry and symmetry[1] == r):
+            for candidate, time in incoming[s][r].items():
+                if candidate != s and time < t:
+                    scores[candidate] += confidence
+        elif implication and implication[2] == r:
+            for candidate, time in out[s][implication[1]].items():
+                if candidate != s and time < t:
+                    scores[candidate] += confidence
+        elif label == "transitivity" or (transitivity and transitivity[1] == r):
+            second_relation = transitivity[2] if transitivity else r
+            for middle, first_time in out[s][r].items():
+                if first_time >= t:
+                    continue
+                for candidate, second_time in out[middle][second_relation].items():
+                    if candidate != s and second_time < t:
+                        scores[candidate] += confidence
 
     return dict(scores)
