@@ -33,4 +33,4 @@ Docker 引擎暂时无法连接，因此本轮没有完成真实图谱离线导�
 
 先看 README 的入口是否容易使用，再看共享指南；代码重点看 techtrend/sharing.py 对源文件保护、处理记录、文件哈希与版本绑定的实现，以及看板的新文档路径。合并前保留独立分支方便比较。
 
-Docker 故障补充：截图中的 dockerInference 通信文件异常已通过备份运行时目录处理；随后出现 Secrets Engine 的同类 socket 错误，继续保留旧文件并重建通信目录。尚需确认引擎恢复，未执行出厂重置。
+Docker 故障补充：截图中的 dockerInference 通信文件异常已通过备份运行时目录处理；随后出现 Secrets Engine 的同类 socket 错误，继续保留旧文件并重建通信目录。两处目录重建后 dockerInference 报错再次出现，引擎仍未恢复，未执行出厂重置。详见 docker_recovery_00.md。
