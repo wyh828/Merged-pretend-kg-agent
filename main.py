@@ -1,4 +1,4 @@
-"""项目入口：`python main.py` 跑全量 pipeline（P4 七阶段）。
+"""项目入口：`python main.py` 按配置顺序运行各阶段。
 
 用法：
     python main.py                 # 跑全部阶段
