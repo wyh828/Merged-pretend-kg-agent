@@ -1,6 +1,6 @@
 # 简明操作指南
 
-适用项目：`F:\Predictive agents`。更新日期：2026-10-03。
+适用项目：`F:\Predictive agents`。更新日期：2026-10-07。
 目前可以准备数据、检查数据、写入图谱和查看看板；正式全量预测还需要扩大样本、补齐专利时序引用并验证历史信息可得性。
 
 ## 1. 打开项目
@@ -79,4 +79,8 @@ git log -5 --format='%s'
 
 数据准备版本的中文说明为“完成十年跨学科数据准备与图谱入库”。Git 的字母数字编号是自动生成的版本标识。
 
-详细记录：[项目进展](README.md) · [数据准备与限制](Attempt/docs/data_preparation_02.md) · [研究方向](Attempt/docs/research_direction_01.md)。
+详细记录：[项目进展](../../README.md) · [数据准备与限制](data_preparation_02.md) · [研究方向](research_direction_01.md)。
+
+## 共享数据
+
+想给别人看成果，先发 C 看板；想继续实验，再发 A 数据和 B 图谱。具体操作见 [共享指南](sharing_00.md)。目前附件还在准备，发布状态见 [共享安排](sharing_plan_00.md)。

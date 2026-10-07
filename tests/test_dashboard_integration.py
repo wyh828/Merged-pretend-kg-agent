@@ -38,6 +38,11 @@ def test_empty_checkout_dashboard_integrates_plans_and_report(tmp_path):
     assert "test analysis body" in html
     for name in ("COMPARISON_REPORT.md", "MERGE_PLAN.md", "REPORT_OUTLINE.md"):
         assert name in html
+    assert "尚未生成此报告。" not in next(
+        report["body"] for report in VisualizeStage._read_reports(out, out / "weekly_report.md")
+        if report["title"] == "COMPARISON_REPORT.md"
+    )
+    assert "Resources/reports/COMPARISON_REPORT.md" in html
     assert "本地回测尚未完成" in html
 
 

@@ -2,7 +2,9 @@
 .env
 Attempt/env/*.local
 .local_backups/
-resources/
+
+# 研究文档保留在 Git；本机采集、数据库和共享包继续忽略
+/Data/
 
 # 运行时产物（保留目录占位 .gitkeep，忽略其中内容）
 data/*

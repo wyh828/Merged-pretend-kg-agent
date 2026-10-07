@@ -1,6 +1,8 @@
 # 向老师汇报 PPT 逐页大纲
 
-> 用途：把 [COMPARISON_REPORT.md](COMPARISON_REPORT.md) 与 [MERGE_PLAN.md](MERGE_PLAN.md) 转成可直接做 PPT 的逐页大纲。
+> 本文保留上游设计和历史结果，未经本机复现；当前进展和本机验证见 [项目入口](../../README.md)。
+
+> 用途：把 [COMPARISON_REPORT.md](COMPARISON_REPORT.md) 与 [MERGE_PLAN.md](../plans/MERGE_PLAN.md) 转成可直接做 PPT 的逐页大纲。
 > 每页给：标题 / 要点 / 配图建议 / 讲稿要点。建议 12 页，控制在 15 分钟内。
 
 ---

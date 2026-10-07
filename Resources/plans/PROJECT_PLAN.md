@@ -1,5 +1,7 @@
 # 多源数据驱动的技术趋势预测系统 —— 项目计划框架
 
+> 本文保留上游设计和历史结果，未经本机复现；当前进展和本机验证见 [项目入口](../../README.md)。
+
 ## Context（背景与目标）
 
 **课题要求**：通过学术论文、专利、新闻、GitHub 热门项目等多源数据，构建可动态更新的知识图谱，通过多智能体协同的方式，预测技术发展趋势。
@@ -263,7 +265,7 @@ ICEWS14/18（TKG 外推标准基准）、TGB（Temporal Graph Benchmark）、AIP
 
 ### 阶段成果记录（P0–P6 已交付）
 
-> 与上表「计划」对应的**实际交付**。详细设计与验证见各阶段 `P*_PLAN.md`；P2 截至 2026-09 已全量跑通，P3 全量交付但**验收未达标**（结论与根因见下「P3 细节」与 [P3_PLAN.md](P3_PLAN.md)「验证结果」）；P3.5 定向图优化 + P4 验证体系见下「P3 优化 / P4 结果」与 [P3_OPT_P4_RESULT.md](P3_OPT_P4_RESULT.md)；P5 自动化编排见下「P5 细节」与 [P5_PLAN.md](P5_PLAN.md)；P6 可视化/报告见下「P6 细节」与 [P6_PLAN.md](P6_PLAN.md)。
+> 与上表「计划」对应的**实际交付**。详细设计与验证见各阶段 `P*_PLAN.md`；P2 截至 2026-09 已全量跑通，P3 全量交付但**验收未达标**（结论与根因见下「P3 细节」与 [P3_PLAN.md](P3_PLAN.md)「验证结果」）；P3.5 定向图优化 + P4 验证体系见下「P3 优化 / P4 结果」与 [P3_OPT_P4_RESULT.md](../reports/P3_OPT_P4_RESULT.md)；P5 自动化编排见下「P5 细节」与 [P5_PLAN.md](P5_PLAN.md)；P6 可视化/报告见下「P6 细节」与 [P6_PLAN.md](P6_PLAN.md)。
 
 | 阶段 | 状态 | 交付物 | 验收结果 |
 |---|---|---|---|
@@ -313,7 +315,7 @@ ICEWS14/18（TKG 外推标准基准）、TGB（Temporal Graph Benchmark）、AIP
 
 > **已知局限（P3/P4 待解决）**：① Kleinberg 突发 `precision@k=0`——当前样本下检出的是泛化/消歧类通用概念（如 "Identification (biology)"、"Work (physics)"）而非真技术趋势，需更大数据 + 更好信号；② `competes` 关系本数据集 0 实例；③ GDELT 日文件按「0 点文件」只取 15 分钟切片，日覆盖量有限。
 
-**P3 优化 / P4 结果 细节**（承接 [P3_OPT_P4_PLAN.md](P3_OPT_P4_PLAN.md)，全文见 [P3_OPT_P4_RESULT.md](P3_OPT_P4_RESULT.md)）：
+**P3 优化 / P4 结果 细节**（承接 [P3_OPT_P4_PLAN.md](P3_OPT_P4_PLAN.md)，全文见 [P3_OPT_P4_RESULT.md](../reports/P3_OPT_P4_RESULT.md)）：
 
 **Part A —— P3 优化（定向技术关系）**：
 
@@ -494,7 +496,7 @@ docker run -d --name neo4j-techtrend \
 
 ### P0-1 / P2-1 执行结果（2026-09，专利前向引用图）
 
-> 承接上表 P0/P1/P2 优先级，P0-1 与 P2-1 已实际落地并评测。全文见 [P4_P3_METRIC_OPT_RESULT.md](P4_P3_METRIC_OPT_RESULT.md)。
+> 承接上表 P0/P1/P2 优先级，P0-1 与 P2-1 已实际落地并评测。全文见 [P4_P3_METRIC_OPT_RESULT.md](../reports/P4_P3_METRIC_OPT_RESULT.md)。
 
 - **P0-1 ✅ 达成**：PatentsView bulk 终版（Zenodo 15058362）免 key，产 **6,967,772 条前向引用事实**，
   跨度 2015-01-06 → 2024-12-31（终版止于 2024，非计划字面「2026」）。`data/interim/patent_citations.jsonl`
@@ -512,8 +514,8 @@ docker run -d --name neo4j-techtrend \
 
 ## P3 / P4 完整结果（定稿，cooccur 主边源）
 
-> 承接 [P3_PLAN.md](P3_PLAN.md)、[P3_OPT_P4_RESULT.md](P3_OPT_P4_RESULT.md)、
-> [P4_P3_METRIC_OPT_RESULT.md](P4_P3_METRIC_OPT_RESULT.md)。把 P3→P4 各阶段实测数字与最终 A2 口径一次性收口，
+> 承接 [P3_PLAN.md](P3_PLAN.md)、[P3_OPT_P4_RESULT.md](../reports/P3_OPT_P4_RESULT.md)、
+> [P4_P3_METRIC_OPT_RESULT.md](../reports/P4_P3_METRIC_OPT_RESULT.md)。把 P3→P4 各阶段实测数字与最终 A2 口径一次性收口，
 > 并以「cooccur 为正式 TKG 边源」落定。**与本文其他历史段落冲突时，以本节为准。**
 
 ### 一页结论（四目标最终数字）

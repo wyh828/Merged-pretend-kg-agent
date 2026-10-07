@@ -1,11 +1,13 @@
 > 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
 
+> 本文保留上游设计和历史结果，未经本机复现；当前进展和本机验证见 [项目入口](../../README.md)。
+
 # P5 hermes-agent 自动化 —— 完整构建计划
 
 > 本文档承接 [PROJECT_PLAN.md](PROJECT_PLAN.md) §六「hermes-agent 编排层」、§七「分阶段路线图」P5 行，以及文末
 > 「后置优化/待决策登记」#20（每日增量累积时序深度）、#19（重跑 extract 补近期定向对）。
 > 也承接 [P4_P3_METRIC_OPT_PLAN.md](P4_P3_METRIC_OPT_PLAN.md) 的 **P0-3（启动每日增量，P5 cron）** —— 那是本阶段要落地的数据侧目标。
-> 现状代码见 [cron.py](cron.py)（P0 空壳）、[main.py](main.py)（P4 七阶段 CLI）、[stages/__init__.py](techtrend/stages/__init__.py)。
+> 现状代码见 [cron.py](../../cron.py)（P0 空壳）、[main.py](../../main.py)（P4 七阶段 CLI）、[stages/__init__.py](../../techtrend/stages/__init__.py)。
 
 ---
 
@@ -26,14 +28,14 @@
 **P0–P4 已把「采集 → 图谱 → 预测 → 验证」四层做齐**（见 PROJECT_PLAN §七「阶段成果记录」），但整条链路仍需人手动敲 `python main.py`。
 P5 要把它变成**每日无人值守**的自动化系统，并顺带解决一个更根本的算法问题——**数据时序深度**。
 
-**为什么 P5 同时是「编排」和「数据」两件事**：P3.5/P4 已把目标②（链接预测）的卡点锁定为「CyGNet 靠复制历史，但定向图 86.5% 的测试是新链接，copy 无史可复」（见 [P3_OPT_P4_RESULT.md](P3_OPT_P4_RESULT.md)）。
+**为什么 P5 同时是「编排」和「数据」两件事**：P3.5/P4 已把目标②（链接预测）的卡点锁定为「CyGNet 靠复制历史，但定向图 86.5% 的测试是新链接，copy 无史可复」（见 [P3_OPT_P4_RESULT.md](../reports/P3_OPT_P4_RESULT.md)）。
 共现图上 copy 已占优——walk-forward 下 CyGNet **0.9459** vs RotatE **0.4487**（共现图高复现、copy 天然占优，非算法更强）；每日增量跑 collect→extract→align，让 `(s,r)` 跨时间重复，**巩固**这一优势并逐步拉长时序深度。
 因此 P5 的每日 cron 不是「把现在的手动流程包一层定时器」那么简单，它本身就是 A2 达标的时间杠杆（PROJECT_PLAN #20）。
 
 **编排层的硬约束（承 TECH_ROADMAP §6 / 审查要点 #3/#9）**：
 1. **底层与 hermes-agent 解耦**：调度器只负责「定时触发 `cron.py`」，业务代码不知道是谁在调度它。hermes-agent 不稳定时可无损降级 APScheduler。
 2. **多智能体发生在编排层，非底层 pipeline**：底层是 7 阶段串行（collect/extract/align/build_graph/predict/report/evaluate），多智能体协作是 hermes-agent 顶层的角色化委派（课题贡献点，需自行设计而非只用内置委派）。
-3. **「每日无人值守」不等于「每天全量重跑」**：collect 已按 id 幂等 + cursor 增量（[collect.py](techtrend/stages/collect.py) `_append_dedup`），但 extract 是整表重算（幂等正确、成本随数据量线性增长）。P5 需一个「0 新增则短路」的守卫，避免空跑烧 LLM/CPU。
+3. **「每日无人值守」不等于「每天全量重跑」**：collect 已按 id 幂等 + cursor 增量（[collect.py](../../techtrend/stages/collect.py) `_append_dedup`），但 extract 是整表重算（幂等正确、成本随数据量线性增长）。P5 需一个「0 新增则短路」的守卫，避免空跑烧 LLM/CPU。
 
 ---
 
@@ -106,8 +108,8 @@ hermes/                         # 新：hermes-agent 侧（thin adapter，语义
 ```
 
 **关键点**：
-- **collect 已是增量幂等**（[collect.py](techtrend/stages/collect.py) 各源 `_read_cursor` + `_append_dedup`），daily 模式每天跑 collect 只会**追加新数据**，`works.jsonl/arxiv.jsonl/...` 逐日增长 → 这就是 #20「时序深度累积」。
-- **extract 是整表重算**（[extract.py](techtrend/stages/extract.py) `write_jsonl` 覆盖 triples.jsonl），每次从**已增长的** interim 重导出 → 时态跨度逐日拉长，无需新代码。
+- **collect 已是增量幂等**（[collect.py](../../techtrend/stages/collect.py) 各源 `_read_cursor` + `_append_dedup`），daily 模式每天跑 collect 只会**追加新数据**，`works.jsonl/arxiv.jsonl/...` 逐日增长 → 这就是 #20「时序深度累积」。
+- **extract 是整表重算**（[extract.py](../../techtrend/stages/extract.py) `write_jsonl` 覆盖 triples.jsonl），每次从**已增长的** interim 重导出 → 时态跨度逐日拉长，无需新代码。
 - **短路守卫**避免「0 新增却全量重算烧 LLM 预算」（`llm_max_docs_per_run` 每次都会重新花一遍）。
 
 ---
@@ -175,7 +177,7 @@ ROLES: tuple[Role, ...] = (
 )
 ```
 
-> 设计要点：`parallel_subtasks` 对应 [stages/predict.py](techtrend/stages/predict.py) 里 P3 已隔离的 `_run_burst/_run_tkg/_run_forecast/_run_fusion`
+> 设计要点：`parallel_subtasks` 对应 [stages/predict.py](../../techtrend/stages/predict.py) 里 P3 已隔离的 `_run_burst/_run_tkg/_run_forecast/_run_fusion`
 > 四个子任务（各自 try/except 不互阻）——这就是「分析 agent 可并行多个」在底层已存在的并行化接缝，hermes-agent 可沿它 fan-out。
 
 ### 6.2 orchestration/runbook.py（新）—— 每日运行手册
@@ -340,7 +342,7 @@ type output\notify_latest.md
 - **extract 全量重算成本**：每日从增长的 interim 全量重导出 + 全量 LLM 重抽（`llm_max_docs_per_run` 每次都花一遍）→
   数据量涨后每日成本上升。P5 先靠「0 新增短路」缓解；真正的「增量抽取」（只对新 doc 抽 + 增量合并 triples）登记为后置优化，
   不在本阶段强做（正确性优先于效率）。
-- **github star 快照「不算重复」**：[collect.py](techtrend/stages/collect.py) `_collect_github` 每次都 `append_jsonl` 一条
+- **github star 快照「不算重复」**：[collect.py](../../techtrend/stages/collect.py) `_collect_github` 每次都 `append_jsonl` 一条
   star 快照（这是刻意设计，star 时间序列需要每日新点），因此「0 新增短路」的判定**只看 id 去重后的 new_records，不看 star 快照**，
   否则永远短路不了。
 - **本机 Clash 代理方向相反**（见记忆 [[windows-clash-proxy-localhost]]）：本地 RSSHub 请求要 `trust_env=False`；

@@ -1,15 +1,17 @@
 # P4/P3 指标优化计划（数据收集路线落地版）
 
+> 本文保留上游设计和历史结果，未经本机复现；当前进展和本机验证见 [项目入口](../../README.md)。
+
 > 承接 [PROJECT_PLAN.md](PROJECT_PLAN.md) §七「阶段成果记录」与文末「P4/P3 指标优化优先级（数据收集路线，定稿）」，并把它
 > 扩展为**可执行**的计划：把用户新提供的三条数据采集路线（Google BigQuery 导出 / USPTO ODP·PatentsView key /
 > Benchmark 对标）落到「哪个指标、怎么救、何时救」。
 >
-> 现状数字全部来自 [P3_OPT_P4_RESULT.md](P3_OPT_P4_RESULT.md)，根因已在 P3/P3.5 多组对照中锁定，本文不重复论证，只排优先级与落地路径。
+> 现状数字全部来自 [P3_OPT_P4_RESULT.md](../reports/P3_OPT_P4_RESULT.md)，根因已在 P3/P3.5 多组对照中锁定，本文不重复论证，只排优先级与落地路径。
 
 > ⚠️ **执行结果更新（2026-09-23）**：P0-1 已交付（6,967,772 条前向引用、2015→2024、免 key），
 > 但 **P2-1 立项前提被证伪**——专利引用图在 walk-forward + 转导协议下必然退化，不能作 CyGNet 的 TKG 边源。
 > 本计划「关键路径 P0-1→P1-2→P2-1」在 P2-1 处断裂；P0-1 产物仍服务 P1-2（引用回归 + S 曲线）。
-> 详见 [P4_P3_METRIC_OPT_RESULT.md](P4_P3_METRIC_OPT_RESULT.md)。
+> 详见 [P4_P3_METRIC_OPT_RESULT.md](../reports/P4_P3_METRIC_OPT_RESULT.md)。
 
 ---
 
@@ -210,7 +212,7 @@ P2-2 / P2-3（按需，依赖数据量增长）
 目标③④（真时序），是本次优化的主轴；P0-2/P0-3 是保底补历史，P1-1/P1-3 是救语义与对标，均可并行推进。
 
 > ⚠️ **P2-1 已证伪（2026-09-23）**：上述关键路径的终点 P2-1（引用图反超 RotatE）经实测不成立
-> （时态 DAG → 转导退化 + 单事件边无 copy 燃料），见 [P4_P3_METRIC_OPT_RESULT.md](P4_P3_METRIC_OPT_RESULT.md)。
+> （时态 DAG → 转导退化 + 单事件边无 copy 燃料），见 [P4_P3_METRIC_OPT_RESULT.md](../reports/P4_P3_METRIC_OPT_RESULT.md)。
 > 关键路径改道为 `P0-1 → P1-2`（引用时序回归 + S 曲线，仍成立）；P1-1 / P1-3 不受影响可继续；
 > A2 反超不再走「专利引用图」路线。
 

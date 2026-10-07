@@ -1,12 +1,14 @@
 > 本机适配说明：工程路径已改为 `F:/Predictive agents`；以下阶段设计与实验数字仍为上游历史记录。本机执行结果见 README 的「本机修订 00」。
 
+> 本文保留上游设计和历史结果，未经本机复现；当前进展和本机验证见 [项目入口](../../README.md)。
+
 # P6 可视化 / 报告 —— 完整构建计划
 
 > 本文档承接 [PROJECT_PLAN.md](PROJECT_PLAN.md) §七「分阶段路线图」P6 行（趋势图 + S 曲线阶段 + 周报，交付前端/报告，验收「可演示」），
 > 文末「后置优化/待决策登记」#10（目标④ S 曲线阶段 + 趋势图 + 周报）、#13（Kleinberg 泛化概念 / 排名 p@k=0 留待 P6），
-> 以及 [P4_P3_METRIC_OPT_RESULT.md](P4_P3_METRIC_OPT_RESULT.md) §5「S 曲线选样修正」、[P5_PLAN.md](P5_PLAN.md) §11「目标④ S 曲线阶段 + 趋势图 + 周报 —— P6」。
-> 现状代码见 [report.py](techtrend/stages/report.py)、[evaluate.py](techtrend/stages/evaluate.py)（已产 `citation_metrics.json` / `s_curve_stages.csv`）、
-> [citations.py](techtrend/prediction/citations.py)（`s_curve_stage` 分类器，选样有偏）、[orchestration/notify.py](techtrend/orchestration/notify.py)（P5 推送，周报可复用）。
+> 以及 [P4_P3_METRIC_OPT_RESULT.md](../reports/P4_P3_METRIC_OPT_RESULT.md) §5「S 曲线选样修正」、[P5_PLAN.md](P5_PLAN.md) §11「目标④ S 曲线阶段 + 趋势图 + 周报 —— P6」。
+> 现状代码见 [report.py](../../techtrend/stages/report.py)、[evaluate.py](../../techtrend/stages/evaluate.py)（已产 `citation_metrics.json` / `s_curve_stages.csv`）、
+> [citations.py](../../techtrend/prediction/citations.py)（`s_curve_stage` 分类器，选样有偏）、[orchestration/notify.py](../../techtrend/orchestration/notify.py)（P5 推送，周报可复用）。
 
 ---
 
@@ -42,11 +44,11 @@
 | 现状 | 对 P6 的含义 |
 |---|---|
 | `output/` 已有 12 个产物（`baseline/temporal/eval/citation_metrics.json`、`forecast.csv`、`fusion_ranking.csv`、`s_curve_stages.csv`…） | 可视化**零重算**：全部读这些产物渲染，不重跑预测 |
-| [report.py](techtrend/stages/report.py) 只读 `baseline_metrics.json` + `temporal_metrics.json` | 遗漏 walk-forward（`eval_metrics.json`）与 S 曲线（`citation_metrics.json`）→ 需补成四目标汇总 |
+| [report.py](../../techtrend/stages/report.py) 只读 `baseline_metrics.json` + `temporal_metrics.json` | 遗漏 walk-forward（`eval_metrics.json`）与 S 曲线（`citation_metrics.json`）→ 需补成四目标汇总 |
 | `requirements.txt` **无 matplotlib/plotly** | 走「零新增依赖」的**内联 SVG** 路线（契合 P3 用 sklearn 替代 XGBoost 的一贯取向） |
-| [citations.py](techtrend/prediction/citations.py) `s_curve_stage` 已有，但 `build_patent_citation_monthly` 按**总被引 top-N** 选样；且 `s_curve_stage` 的 `total < 0.2*max(x)` 在累积序列上恒假 | 实测 `s_curve_dist={mature:4037, declining:963}` 只 2 类（PROJECT_PLAN 定稿：mature/declining 无 emerging/growth）→ P6 改分层抽样 + 修 emerging 判据 |
+| [citations.py](../../techtrend/prediction/citations.py) `s_curve_stage` 已有，但 `build_patent_citation_monthly` 按**总被引 top-N** 选样；且 `s_curve_stage` 的 `total < 0.2*max(x)` 在累积序列上恒假 | 实测 `s_curve_dist={mature:4037, declining:963}` 只 2 类（PROJECT_PLAN 定稿：mature/declining 无 emerging/growth）→ P6 改分层抽样 + 修 emerging 判据 |
 | 目标④ 只在**专利**上做了，**概念（技术实体）**上没有 | 目标④ 本义是「技术成熟度」，技术=Concept，P6 补概念级 S 曲线为主演示路径 |
-| [notify.py](techtrend/orchestration/notify.py)（P5）已能推 file/telegram/discord | 周报可复用 `push_report`，不新造推送 |
+| [notify.py](../../techtrend/orchestration/notify.py)（P5）已能推 file/telegram/discord | 周报可复用 `push_report`，不新造推送 |
 
 ---
 
@@ -59,7 +61,7 @@
 | 3 | S 曲线选样修正 | `build_patent_citation_monthly` 改**分层抽样**（按 log₁₀ 总被引分箱、每箱采样），保留全谱阶段 | 承 P4_P3_RESULT §5 待办；top-N 总被引只出成熟/衰退 |
 | 4 | 阶段结构 | 新增 `VisualizeStage`（**第 9 阶段**，在 evaluate 之后、notify 之前），纯渲染、零重算 | 与 P4 的 `EvaluateStage`、P5 的 `NotifyStage` 同一「追加阶段」模式 |
 | 5 | 周报触发 | 周边界（可配 weekday，默认周一）由 `VisualizeStage` 顺带产出 + 独立 `cron.py --mode weekly` 手动/演示 | 复用 P5 每日 cron，不新增调度器；手动可回填 |
-| 6 | report 汇总 | [report.py](techtrend/stages/report.py) 从「baseline+temporal」扩到**四目标**（+eval+citation+S 曲线） | 现在 report 遗漏 walk-forward 与目标④，不是完整报告 |
+| 6 | report 汇总 | [report.py](../../techtrend/stages/report.py) 从「baseline+temporal」扩到**四目标**（+eval+citation+S 曲线） | 现在 report 遗漏 walk-forward 与目标④，不是完整报告 |
 | 7 | 排名 p@k=0 | **不修**，如实展示 fusion top-k 并标注「p@k=0 为信号本身弱」的诚实声明 | #13 属数据信号路线；P6 只渲染，红线「不调到赢」 |
 
 > **可视化载体对比**（决策 1 依据）：
@@ -117,8 +119,8 @@ output/（P1–P5 已落盘，P6 只读）
 
 **关键点**：
 - **零重算**：`VisualizeStage` 只 `json.loads` / `pd.read_csv` 读 `output/`，不 import torch/pykeen、不碰 Neo4j、不发网络请求。
-- **时序曲线数据来源**：概念趋势用 `build_concept_monthly_counts`（[kleinberg.py](techtrend/prediction/kleinberg.py)）对 `works.jsonl` 现场算（这是唯一一处「重算」，仅读 interim 聚合，无模型/LLM）；专利累积引用用 `patent_citations.jsonl`。二者都进 dashboard 趋势图。
-- **周报**：读 `run_manifest.jsonl` 尾部 7 条（P5 每日追加）+ 最新四指标 + fusion top-k + S 曲线分布，产出文本周报并复用 [notify.py](techtrend/orchestration/notify.py) 推送。
+- **时序曲线数据来源**：概念趋势用 `build_concept_monthly_counts`（[kleinberg.py](../../techtrend/prediction/kleinberg.py)）对 `works.jsonl` 现场算（这是唯一一处「重算」，仅读 interim 聚合，无模型/LLM）；专利累积引用用 `patent_citations.jsonl`。二者都进 dashboard 趋势图。
+- **周报**：读 `run_manifest.jsonl` 尾部 7 条（P5 每日追加）+ 最新四指标 + fusion top-k + S 曲线分布，产出文本周报并复用 [notify.py](../../techtrend/orchestration/notify.py) 推送。
 
 ---
 
@@ -157,7 +159,7 @@ weekly_report_file: str = "output/weekly_report.md"
 
 ### 6.1 prediction/lifecycle.py（新）—— S 曲线阶段分类（泛化）
 
-把 [citations.py](techtrend/prediction/citations.py) 里专利专用的 `s_curve_stage` 抽出来泛化，**概念级与专利级共用**：
+把 [citations.py](../../techtrend/prediction/citations.py) 里专利专用的 `s_curve_stage` 抽出来泛化，**概念级与专利级共用**：
 
 ```python
 def s_curve_stage(cumulative: Iterable[float], growth_window: int = 6,
@@ -183,8 +185,8 @@ def s_curve_stages(monthly: pd.DataFrame, ...) -> pd.Series:
     """保持原签名（专利级入口，从 citations.py 迁移而来，供 evaluate.py 与 viz 复用）。"""
 ```
 
-**向后兼容**：[citations.py](techtrend/prediction/citations.py) 里 `s_curve_stage`/`s_curve_stages` 改为
-`from techtrend.prediction.lifecycle import s_curve_stage, s_curve_stages` 再 re-export，[evaluate.py](techtrend/stages/evaluate.py)
+**向后兼容**：[citations.py](../../techtrend/prediction/citations.py) 里 `s_curve_stage`/`s_curve_stages` 改为
+`from techtrend.prediction.lifecycle import s_curve_stage, s_curve_stages` 再 re-export，[evaluate.py](../../techtrend/stages/evaluate.py)
 的 `from ...citations import ... s_curve_stages` 无需改动（或一并切到 lifecycle，二选一，实现期定）。
 
 ### 6.2 prediction/citations.py（改）—— S 曲线选样修正
@@ -275,7 +277,7 @@ class VisualizeStage(Stage):
         # weekly_enable 且今天是 weekly_weekday → 写 weekly_report.md（可再 notify）
 ```
 
-[stages/__init__.py](techtrend/stages/__init__.py) `get_default_stages` 在 `EvaluateStage` 之后、`NotifyStage` 之前插入
+[stages/__init__.py](../../techtrend/stages/__init__.py) `get_default_stages` 在 `EvaluateStage` 之后、`NotifyStage` 之前插入
 `VisualizeStage(settings)`。`main.py --list` 输出 **9 阶段**。
 
 ### 6.8 stages/report.py（改）—— 汇总四目标
@@ -345,6 +347,6 @@ class VisualizeStage(Stage):
 - **交互升级**：SVG → Plotly（`include_plotlyjs='inline'`）当需要 hover/缩放时；`viz/charts.py` 接口不变。
 - **排名 p@k=0 根治**（#13）：补真引用/star 时序（P1-2 已回填 `cited_by_count`，多日 star 快照待 P5 累积）→ 属数据路线，非可视化。
 - **目标④ 监督化**：S 曲线阶段当前是启发式；若要「训练」成熟度模型，需人工标注阶段真值，留作选题延伸，不在 P6 做。
-- **周报推送渠道**：当前周报可复用 [notify.py](techtrend/orchestration/notify.py) 的 file/telegram/discord；是否把周报纳入
+- **周报推送渠道**：当前周报可复用 [notify.py](../../techtrend/orchestration/notify.py) 的 file/telegram/discord；是否把周报纳入
   每日 `notify_channels` 之外的「周推送」单列，实现期按需定。
 - **根目录残留调试脚本** `alpha_sweep_tmp.py / dim_sweep_tmp.py / debug_fusion_tmp.py` 可删（承 P3_OPT_P4_RESULT 尾注）。

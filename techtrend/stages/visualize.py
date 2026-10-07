@@ -290,7 +290,7 @@ class VisualizeStage(Stage):
             content["tables"].append({"title": "学科覆盖明细", "columns": ["学科", "已取得月份", "期间文献总量（当前回溯）"],
                                        "rows": [[names[f], int(pivot.loc[f].notna().sum()), int(pivot.loc[f].sum())]
                                                 for f in pivot.index]})
-        content["reports"].append({"title": "数据准备与覆盖审计", "source": str(path),
+        content["reports"].append({"title": "数据准备与覆盖审计", "source": path.relative_to(settings.data_dir).as_posix(),
                                    "body": path.read_text(encoding="utf-8")})
         content["notes"].append("当前 API 汇总和文献标签是今天的回溯快照；历史当时可得性未验证，正式预测回测尚未完成。OpenAlex 与 Crossref 有重叠，不可相加。")
         return content
@@ -366,9 +366,12 @@ class VisualizeStage(Stage):
         reports = []
         paths = [out_dir / name for name in ("report.md", "eval_report.md", "report_llm.md")]
         paths.append(weekly_path)
-        paths.extend(PROJECT_ROOT / name for name in (
-            "COMPARISON_REPORT.md", "MERGE_PLAN.md", "REPORT_OUTLINE.md",
-        ))
+        historical_reports = [
+            PROJECT_ROOT / "Resources" / "reports" / "COMPARISON_REPORT.md",
+            PROJECT_ROOT / "Resources" / "plans" / "MERGE_PLAN.md",
+            PROJECT_ROOT / "Resources" / "reports" / "REPORT_OUTLINE.md",
+        ]
+        paths.extend(historical_reports)
         paths.extend(PROJECT_ROOT / "Attempt" / "docs" / name for name in (
             "leakage_revision_01.md", "research_direction_01.md", "data_preparation_02.md",
         ))
@@ -376,9 +379,10 @@ class VisualizeStage(Stage):
             exists = path.exists()
             reports.append({
                 "title": path.name,
-                "source": str(path),
+                "source": path.relative_to(PROJECT_ROOT).as_posix()
+                    if path.is_relative_to(PROJECT_ROOT) else path.name,
                 "body": (path.read_text(encoding="utf-8") if exists else "尚未生成此报告。")
-                    + ("\n\n注意：项目计划和对比报告包含上游历史记录，未经本机重新验证。" if path.parent == PROJECT_ROOT else ""),
+                    + ("\n\n注意：项目计划和对比报告包含上游历史记录，未经本机重新验证。" if path in historical_reports else ""),
             })
         return reports
 

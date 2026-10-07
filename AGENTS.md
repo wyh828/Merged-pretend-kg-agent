@@ -75,9 +75,16 @@ Use concise Chinese explanations unless English is needed for code, commands, fi
 
 ## 9. Function-by-Function Revision Gate
 
-1. Before merging or implementing new functionality, read the complete project source, function interfaces, configuration, callers, data flow, and target plans, including `PROJECT_PLAN.md`, `COMPARISON_REPORT.md`, `MERGE_PLAN.md`, and `REPORT_OUTLINE.md`.
+1. Before merging or implementing new functionality, read the complete project source, function interfaces, configuration, callers, data flow, and target plans, including `Resources/plans/PROJECT_PLAN.md`, `Resources/reports/COMPARISON_REPORT.md`, `Resources/plans/MERGE_PLAN.md`, and `Resources/reports/REPORT_OUTLINE.md`.
 2. Maintain a function inventory and distinguish syntax/import checks, unit tests, offline integration checks, and external-service validation. Inventory coverage does not mean every function is behaviorally verified.
 3. Reproduce one failure, specify the expected interface behavior, make one focused revision, and run its relevant checks before starting the next revision. Stop advancing when a required check fails.
 4. Reuse and improve the existing dashboard in `techtrend/viz/`; integrate analysis documents with the dashboard using the same generated artifacts and explicitly identify missing data and unverified results.
 5. Record each stage's blockers, merged results, verification commands/results, and subsequent optimization in the current checkout's root `README.md` (`F:\Predictive agents\README.md` on this computer).
 6. Do not carry upstream historical benchmark numbers forward as local validation results. Changes to forecast targets or evaluation protocols still require user review.
+
+## 10. GitHub Account and Upload Destination
+
+1. The user requires local project conversations to use the machine's GitHub account `LisaZhao0709`. Use the local Git credential manager and verify the authenticated identity before remote mutations; never print or persist tokens in project files.
+2. Do not use a connector authenticated as another account to upload, create repositories, releases, or pull requests for this project.
+3. Upload this project's updates to `https://github.com/wyh828/Merged-pretend-kg-agent`, as authorized by the user after granting write access. Preserve the existing fork.
+4. Use the original repository remote for uploads. Preserve other remotes, avoid force pushes, and keep data packages in versioned Release attachments with provenance and validation records.
